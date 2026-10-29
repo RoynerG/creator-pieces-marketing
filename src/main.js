@@ -10,6 +10,7 @@ import {
   validateProject,
 } from "./model.js";
 import { renderPiece } from "./render.js";
+import { loadPieceFonts } from "./fonts.js";
 import { icon, fillIcons } from "./icons.js";
 
 const $ = (selector) => document.querySelector(selector);
@@ -21,6 +22,7 @@ let state = {
   logoImage: null,
 };
 let selected = 0,
+  fontsReady = false,
   busy = false,
   saveTimer,
   noticeTimer,
@@ -258,8 +260,8 @@ function render() {
   $("#pieces-summary").textContent = state.photos.length
     ? `1 portada${state.photos.length > 1 ? ` + ${state.photos.length - 1} fotografías` : ""} · ${state.photos.length}/10`
     : "1 portada + 9 fotografías";
-  $("#download-one").disabled = !photo;
-  $("#export-all").disabled = !state.photos.length;
+  $("#download-one").disabled = !photo || !fontsReady;
+  $("#export-all").disabled = !state.photos.length || !fontsReady;
   $("#export-all>span").textContent = state.photos.length
     ? `Descargar ${state.photos.length} ${state.photos.length === 1 ? "pieza" : "piezas"}`
     : "Descargar carrusel";
@@ -537,6 +539,7 @@ $("#project-input").addEventListener("change", async (event) => {
 });
 $("#download-one").addEventListener("click", () =>
   task("Generando la pieza en alta resolución…", async () => {
+    await loadPieceFonts();
     if (!state.photos[selected])
       throw new Error("Añade una foto a esta pieza primero.");
     const canvas = document.createElement("canvas");
@@ -552,6 +555,7 @@ $("#download-one").addEventListener("click", () =>
 );
 $("#export-all").addEventListener("click", () =>
   task("Preparando tu carrusel…", async () => {
+    await loadPieceFonts();
     if (!state.photos.length) throw new Error("Carga tus fotografías primero.");
     const files = {},
       canvas = document.createElement("canvas");
@@ -642,6 +646,17 @@ async function start() {
   $("main").inert = true;
   $(".app-header").inert = true;
   syncControls();
+  try {
+    await loadPieceFonts();
+    fontsReady = true;
+  } catch (error) {
+    console.error(error);
+    notice(
+      "No se pudieron cargar las tipografías. Recarga la app para habilitar las descargas.",
+      true,
+      true,
+    );
+  }
   render();
   try {
     database = await openDatabase();

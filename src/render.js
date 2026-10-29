@@ -11,15 +11,16 @@ function fitText(
   color = "#041e4d",
   tracking = 0,
   align = "center",
+  family = "Poppins",
 ) {
   const chars = [...String(text)];
   const measure = () =>
     chars.reduce((sum, char) => sum + ctx.measureText(char).width, 0) +
     Math.max(0, chars.length - 1) * tracking;
-  ctx.font = `${weight} ${size}px Arial, sans-serif`;
+  ctx.font = `${weight} ${size}px "${family}", sans-serif`;
   while (measure() > maxWidth && size > 10) {
     size -= 1;
-    ctx.font = `${weight} ${size}px Arial, sans-serif`;
+    ctx.font = `${weight} ${size}px "${family}", sans-serif`;
   }
   let cursor = align === "center" ? x - measure() / 2 : x;
   ctx.fillStyle = color;
@@ -149,7 +150,7 @@ function areaIcon(ctx, x, y, color) {
   ctx.quadraticCurveTo(23, -25, 23, -17);
   ctx.lineTo(23, 12);
   ctx.stroke();
-  fitText(ctx, "m²", 1, 9, 35, 25, 600, color);
+  fitText(ctx, "m²", 1, 9, 35, 25, 700, color, 0, "center", "Montserrat");
   ctx.restore();
 }
 export function renderPiece(canvas, state, index) {
@@ -168,7 +169,7 @@ export function renderPiece(canvas, state, index) {
     ctx.fillRect(0, 558, 847, HEIGHT - 558);
     ctx.fillStyle = s.secondary;
     ctx.fillRect(847, 558, 233, HEIGHT - 558);
-    fitText(ctx, s.operation, 540, 120, 930, 65, 800, s.accent, 22);
+    fitText(ctx, s.operation, 540, 120, 930, (50 * 4) / 3, 700, s.accent, 22);
     ctx.fillStyle = "#fff";
     ctx.fillRect(362, 160, 376, 8);
     fitText(
@@ -178,7 +179,7 @@ export function renderPiece(canvas, state, index) {
       264,
       940,
       48,
-      750,
+      700,
       s.accent,
       17,
     );
@@ -190,8 +191,8 @@ export function renderPiece(canvas, state, index) {
       66,
       1111,
       737,
-      46,
-      300,
+      (35 * 4) / 3,
+      200,
       s.navy,
       0,
       "left",
@@ -204,9 +205,12 @@ export function renderPiece(canvas, state, index) {
       214,
       1181,
       250,
-      42,
-      800,
+      (30 * 4) / 3,
+      700,
       s.accent,
+      0,
+      "center",
+      "Montserrat",
     );
     const specs = [
       [s.bedrooms, "habs.", 110, bed],
@@ -216,7 +220,19 @@ export function renderPiece(canvas, state, index) {
     for (const [value, label, x, icon] of specs) {
       if (value === "") continue;
       icon(ctx, x, 1270, s.navy);
-      fitText(ctx, `${value} ${label}`, x, 1327, 150, 29, 500, s.navy);
+      fitText(
+        ctx,
+        `${value} ${label}`,
+        x,
+        1327,
+        150,
+        28,
+        500,
+        s.navy,
+        0,
+        "center",
+        "Montserrat",
+      );
     }
   } else {
     if (photo) imageContain(ctx, photo.image, 0, 0, WIDTH, HEIGHT, s.navy);

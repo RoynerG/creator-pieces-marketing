@@ -27,6 +27,15 @@ El servidor escucha solamente en `127.0.0.1`. Después de instalar las dependenc
 
 La interfaz muestra el estado de carga y exportación, tiene navegación por teclado y se adapta a pantallas pequeñas. No utiliza IA para modificar el inmueble.
 
+### Tipografías de las piezas
+
+- **Poppins Bold (700):** negocio y tipo de inmueble. El negocio usa 66,67 px, equivalente a los 50 pt del ejemplo.
+- **Poppins ExtraLight (200):** ubicación, 46,67 px (35 pt).
+- **Montserrat Bold (700):** código, 40 px (30 pt).
+- **Montserrat Medium (500):** habitaciones, baños y área, 28 px.
+
+Las fuentes se distribuyen localmente con los paquetes Fontsource y se incluyen en el build; no necesitan estar instaladas en Windows ni se descargan de Google al usar la app. La vista previa y la exportación esperan a que estén cargadas. Los tamaños se reducen automáticamente si un texto largo no cabe. La interfaz del editor conserva su tipografía del sistema.
+
 ## Guardar y retomar
 
 - El borrador (fotos, logo y datos) se guarda automáticamente en **IndexedDB del navegador**. El navegador puede borrar sus datos; no es una copia de seguridad.
