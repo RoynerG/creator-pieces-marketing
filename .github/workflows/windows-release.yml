@@ -23,8 +23,22 @@ jobs:
         shell: pwsh
         run: npm version "1.1.${{ github.run_number }}" --no-git-tag-version
       - run: npm test
-      - name: Compilar y publicar instalador y metadatos de actualización
-        run: npm run dist:win -- --publish always
+      - name: Compilar instalador y metadatos de actualización
+        run: npm run dist:win -- --publish never
+      - name: Publicar una versión completa
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          $tag = "v$version"
+          gh release view $tag --repo $env:GITHUB_REPOSITORY 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            gh release create $tag --target $env:GITHUB_SHA --title "Piezas Estudio $version" --notes "Instalador Windows de 64 bits. Incluye actualizaciones automáticas y almacenamiento local SQLite." --draft
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          gh release upload $tag "release/Piezas-Setup-$version.exe" "release/Piezas-Setup-$version.exe.blockmap" "release/latest.yml" --clobber
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          gh release edit $tag --draft=false --latest
+          exit $LASTEXITCODE
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions/upload-artifact@v4
