@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import { fileURLToPath } from "node:url";
 import { createMiniMaxMiddleware } from "./server/minimax.js";
+import { createLibraryMiddleware } from "./server/library.js";
 const root = fileURLToPath(new URL(".", import.meta.url));
 export default defineConfig({
   server: {
@@ -15,9 +16,11 @@ export default defineConfig({
       name: "piezas-local-minimax",
       configureServer(server) {
         server.middlewares.use(createMiniMaxMiddleware({ root }));
+        server.middlewares.use(createLibraryMiddleware({ root }));
       },
       configurePreviewServer(server) {
         server.middlewares.use(createMiniMaxMiddleware({ root }));
+        server.middlewares.use(createLibraryMiddleware({ root }));
       },
     },
   ],

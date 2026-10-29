@@ -12,6 +12,12 @@ import {
 import { renderPiece } from "./render.js";
 import { loadPieceFonts } from "./fonts.js";
 import { initDescriptions } from "./descriptions.js";
+import {
+  createPublicationStore,
+  validCode,
+  publicationZipName,
+} from "./publications-store.js";
+import { initPublications } from "./publications.js";
 import { icon, fillIcons } from "./icons.js";
 
 const $ = (selector) => document.querySelector(selector);
@@ -30,10 +36,31 @@ let selected = 0,
   renderFrame,
   database;
 let saveQueue = Promise.resolve();
+let publicationStore,
+  activeCode = "",
+  activeRevision = 0,
+  saveError,
+  legacyDraft;
 fillIcons();
 const descriptions = initDescriptions({
   getProperty: () => state.settings,
   onChange: () => changed(),
+  notice,
+});
+const publications = initPublications({
+  getStore: () => publicationStore,
+  getActive: () => activeCode,
+  getPhotoCount: () => state.photos.length,
+  open: openPublication,
+  home: async () => {
+    if (busy) return false;
+    descriptions.set(descriptions.get());
+    await flushPublication();
+    return true;
+  },
+  importPhotos: async (files) => {
+    await addPhotos(files);
+  },
   notice,
 });
 
@@ -167,36 +194,138 @@ function readDraft() {
 }
 function saveDraft() {
   clearTimeout(saveTimer);
-  if (!database) return;
-  const snapshot = serialize();
+  saveTimer = undefined;
+  if (!publicationStore) return Promise.resolve();
+  const snapshot = serialize(),
+    code = activeCode;
+  let thumbnail = "";
+  if (state.photos[0]) {
+    const canvas = document.createElement("canvas");
+    canvas.width = 180;
+    canvas.height = 135;
+    const img = state.photos[0].image;
+    const scale = Math.min(180 / img.width, 135 / img.height);
+    canvas
+      .getContext("2d")
+      .drawImage(
+        img,
+        (180 - img.width * scale) / 2,
+        (135 - img.height * scale) / 2,
+        img.width * scale,
+        img.height * scale,
+      );
+    thumbnail = canvas.toDataURL("image/jpeg", 0.7);
+  }
   saveQueue = saveQueue
     .catch(() => {})
-    .then(
-      () =>
-        new Promise((resolve, reject) => {
-          const tx = database.transaction("projects", "readwrite");
-          tx.objectStore("projects").put(snapshot, "draft");
-          tx.oncomplete = () => {
-            $("#save-status").textContent = "Guardado en este navegador";
-            resolve();
-          };
-          tx.onerror = tx.onabort = () =>
-            reject(tx.error || new Error("No se pudo guardar el borrador."));
-        }),
-    )
+    .then(async () => {
+      const record = await publicationStore.save(
+        snapshot,
+        code,
+        activeRevision,
+        thumbnail,
+      );
+      if (code === activeCode && record) activeRevision = record.revision;
+      saveError = null;
+      $("#save-status").textContent = "Guardado en este navegador";
+      $("#publication-status").textContent = code
+        ? `#${code} · Guardado`
+        : "Borrador guardado";
+    })
     .catch((error) => {
+      saveError = error;
       console.error(error);
       $("#save-status").textContent =
         "Sin guardado automático · Usa Guardar proyecto";
-      notice(
-        "No se pudo guardar el borrador. Usa “Guardar proyecto” para conservar tu trabajo.",
-        true,
-      );
+      notice(error.message, true);
     });
+  return saveQueue;
+}
+async function flushPublication() {
+  await saveDraft();
+  if (saveError) throw saveError;
+}
+async function openPublication(code, reuseDraft = false, imported = null) {
+  if (busy) throw new Error("Espera a que termine la operación actual.");
+  if (!publicationStore)
+    throw new Error(
+      "El almacenamiento local no está disponible. Reinicia la app.",
+    );
+  if (!validCode(code))
+    throw new Error(
+      "Usa un código de hasta 24 letras, números, guiones o guiones bajos.",
+    );
+  busy = true;
+  $("main").inert = true;
+  $(".app-header").inert = true;
+  try {
+    descriptions.set(descriptions.get());
+    await flushPublication();
+    const record = await publicationStore.read(`publication:${code}`);
+    if (
+      imported &&
+      record &&
+      !(await confirmReplace(
+        "Reemplazar publicación guardada",
+        `Ya existe #${code}. ¿Reemplazar sus datos con el archivo importado?`,
+      ))
+    )
+      return false;
+    const branding = Object.fromEntries(
+      ["navy", "accent", "secondary", "logoSize", "logoPosition"].map((key) => [
+        key,
+        state.settings[key],
+      ]),
+    );
+    const next =
+      imported ||
+      record?.project ||
+      (reuseDraft
+        ? structuredClone(legacyDraft || serialize())
+        : {
+            version: 1,
+            settings: {
+              ...defaults,
+              ...branding,
+              reference: code,
+              bedrooms: "",
+              bathrooms: "",
+              area: "",
+            },
+            photos: [],
+            logo: state.logo,
+            description: {
+              ...descriptions.get(),
+              source: "",
+              output: "",
+              reference: code,
+            },
+          });
+    next.settings.reference = code;
+    next.description = { ...next.description, reference: code };
+    await hydrate(next);
+    activeCode = code;
+    activeRevision = record?.revision || 0;
+    $("#reference").readOnly = true;
+    $("#active-publication-code").textContent = `#${code}`;
+    descriptions.show(false);
+    showTab("property");
+    await flushPublication();
+    publications.showEditor();
+    notice(
+      `Publicación #${code} abierta. Fotos y descripción se guardan juntas.`,
+    );
+    return true;
+  } finally {
+    busy = false;
+    $("main").inert = false;
+    $(".app-header").inert = false;
+  }
 }
 function changed(structure = false) {
   if (database) {
     $("#save-status").textContent = "Guardando cambios…";
+    $("#publication-status").textContent = "Guardando cambios…";
     clearTimeout(saveTimer);
     saveTimer = setTimeout(saveDraft, 400);
   }
@@ -213,7 +342,11 @@ async function hydrate(project) {
     photos.push({ ...photo, image: await loadImage(photo.src) });
   const logoImage = clean.logo ? await loadImage(clean.logo) : null;
   state = { settings: clean.settings, photos, logo: clean.logo, logoImage };
-  descriptions.set(clean.description);
+  descriptions.set({
+    ...clean.description,
+    operation: clean.settings.operation,
+    reference: clean.settings.reference,
+  });
   selected = 0;
   syncControls();
   updatePhotoList();
@@ -440,6 +573,10 @@ $$("[data-field]").forEach((input) =>
     });
     if (input.dataset.field === "logoSize")
       $("#logo-size-output").textContent = `${state.settings.logoSize} px`;
+    if (input.dataset.field === "operation") {
+      const caption = descriptions.get();
+      descriptions.set({ ...caption, operation: state.settings.operation });
+    }
     changed();
   }),
 );
@@ -489,29 +626,6 @@ $("#reset-colors").addEventListener("click", () => {
     state.settings[key] = defaults[key];
   changed(true);
 });
-$("#new-project").addEventListener("click", async () => {
-  if (
-    busy ||
-    !(await confirmReplace(
-      "Empezar un nuevo proyecto",
-      "Se reemplazará el proyecto abierto. Guarda una copia si quieres conservarlo. Tu marca se mantendrá para el siguiente inmueble.",
-    ))
-  )
-    return;
-  const branding = Object.fromEntries(
-    ["navy", "accent", "secondary", "logoSize", "logoPosition"].map((key) => [
-      key,
-      state.settings[key],
-    ]),
-  );
-  state = { ...state, settings: { ...defaults, ...branding }, photos: [] };
-  descriptions.reset();
-  selected = 0;
-  changed(true);
-  saveDraft();
-  showTab("property");
-  notice("Proyecto nuevo. Tu marca está lista para usar.");
-});
 $("#save-project").addEventListener("click", () => {
   if (busy) return;
   saveDraft();
@@ -528,25 +642,19 @@ $("#project-input").addEventListener("change", async (event) => {
   if (!file) return;
   if (file.size > 150 * 1024 * 1024)
     return notice("El proyecto supera los 150 MB permitidos.", true);
-  if (
-    !(await confirmReplace(
-      "Abrir otro proyecto",
-      "El archivo reemplazará el proyecto abierto. Guarda una copia si quieres conservarlo.",
-    ))
-  )
-    return;
-  task("Abriendo tu proyecto…", async () => {
-    let project;
-    try {
-      project = JSON.parse(await file.text());
-    } catch {
-      throw new Error("El archivo no contiene un proyecto válido.");
-    }
-    await hydrate(project);
-    saveDraft();
-    notice("Proyecto abierto. Puedes seguir editando.");
-  });
+  try {
+    const project = validateProject(JSON.parse(await file.text()));
+    const code = project.settings.reference.trim();
+    if (!validCode(code))
+      throw new Error(
+        "El archivo necesita un código válido para crear su publicación.",
+      );
+    await openPublication(code, false, project);
+  } catch (error) {
+    notice(error.message || "No se pudo abrir el proyecto.", true);
+  }
 });
+
 $("#download-one").addEventListener("click", () =>
   task("Generando la pieza en alta resolución…", async () => {
     await loadPieceFonts();
@@ -565,6 +673,7 @@ $("#download-one").addEventListener("click", () =>
 );
 $("#export-all").addEventListener("click", () =>
   task("Preparando tu carrusel…", async () => {
+    publicationZipName(activeCode);
     await loadPieceFonts();
     if (!state.photos.length) throw new Error("Carga tus fotografías primero.");
     const files = {},
@@ -585,7 +694,7 @@ $("#export-all").addEventListener("click", () =>
     }
     download(
       new Blob([zipSync(files, { level: 0 })], { type: "application/zip" }),
-      `inmueble-${safeFilename(state.settings.reference)}.zip`,
+      publicationZipName(activeCode),
     );
     notice(
       `Listo: ${state.photos.length} piezas exportadas en 1080 × 1350 px.`,
@@ -646,7 +755,7 @@ $("#load-demo").addEventListener("click", async () => {
     ))
   )
     return;
-  await loadDemo();
+  if (await openPublication("12238")) await loadDemo();
 });
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "hidden" && saveTimer) saveDraft();
@@ -670,8 +779,27 @@ async function start() {
   render();
   try {
     database = await openDatabase();
+    publicationStore = createPublicationStore(database);
+    legacyDraft = await publicationStore.read("legacy-uncoded-draft");
     const draft = await readDraft();
-    if (draft) await hydrate(draft);
+    if (draft) {
+      await hydrate(draft);
+      const code = state.settings.reference.trim();
+      if (validCode(code)) {
+        const record = await publicationStore.read(`publication:${code}`);
+        if (record) {
+          await hydrate(record.project);
+          activeRevision = record.revision;
+        }
+        activeCode = code;
+        if (!record) await flushPublication();
+      } else {
+        legacyDraft = draft;
+        await publicationStore.archiveLegacy(draft);
+      }
+    }
+    $("#resume-draft").hidden = !legacyDraft;
+    await publications.refresh();
   } catch (error) {
     console.error(error);
     $("#save-status").textContent =
@@ -684,6 +812,7 @@ async function start() {
     $("main").inert = false;
     $(".app-header").inert = false;
   }
+  $("#save-project").disabled = true;
   try {
     const response = await fetch("/demo/1.png", { method: "HEAD" });
     if (

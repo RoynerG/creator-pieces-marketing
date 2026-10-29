@@ -40,15 +40,15 @@ const response = () =>
   });
 const testKey = "sk-cp-test-only-not-a-real-secret";
 
-test("source ID overrides stale project ID and invalid refinements/URLs are rejected", () => {
+test("source ID is validated against the publication and invalid refinements are rejected", () => {
   assert.equal(validateCaptionRequest(input).reference, "12238");
   assert.throws(
     () => validateCaptionRequest({ ...input, action: "shorter" }),
     /antes de ajustarla/,
   );
   assert.throws(
-    () => validateCaptionRequest({ ...input, website: "javascript:alert(1)" }),
-    /https/,
+    () => validateCaptionRequest({ ...input, publicationCode: "999" }),
+    /publicación 999/,
   );
   assert.throws(
     () => validateCaptionRequest({ source: "a".repeat(18001) }),
@@ -64,9 +64,31 @@ test("formatted publication includes exact contact, emoji lines and no reasoning
   assert.match(text, /3106573536/);
   assert.match(text, /📐 212 m²\n🛏️ 4 alcobas/);
   assert.doesNotMatch(text, /private reasoning|script|999/);
+  assert.doesNotMatch(text, /https?:|www\./);
   assert.equal(text.match(/#Cartagena/g).length, 1);
   assert.doesNotMatch(plainCaption(text), /\*\*/);
   assert.throws(() => formatCaption('{"title":"unfinished', input), /formato/);
+});
+test("legacy and newly generated descriptions exclude web links", () => {
+  const project = validateProject({
+    version: 1,
+    settings: defaults,
+    photos: [],
+    description: {
+      website: input.website,
+      output: `**Mi anuncio**\n\n${input.website}\n\n#Cartagena`,
+    },
+  });
+  assert.equal("website" in project.description, false);
+  assert.doesNotMatch(project.description.output, /https?:/);
+  const text = formatCaption(
+    JSON.stringify({
+      ...JSON.parse(content),
+      cta: "Visita https://example.com y www.example.com",
+    }),
+    validateCaptionRequest(input),
+  );
+  assert.doesNotMatch(text, /https?:|www\./);
 });
 test("provider receives subscription credential only via Authorization; output excludes it", async () => {
   const result = await generateCaption({

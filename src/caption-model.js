@@ -5,7 +5,6 @@ export const descriptionDefaults = {
   operation: "EN VENTA",
   city: "Cartagena",
   phone: "3106573536",
-  website: "https://gocartagenarealestate.com/",
   brand: "Go Cartagena Real Estate",
 };
 export function normalizeDescription(input = {}) {
@@ -17,7 +16,6 @@ export function normalizeDescription(input = {}) {
     reference: 24,
     city: 100,
     phone: 40,
-    website: 300,
     brand: 80,
   })) {
     result[key] =
@@ -27,6 +25,15 @@ export function normalizeDescription(input = {}) {
   }
   result.operation =
     input.operation === "EN ARRIENDO" ? "EN ARRIENDO" : "EN VENTA";
+  result.output = withoutLinks(result.output);
   return result;
 }
-export const plainCaption = (text) => text.replace(/\*\*([^*]+)\*\*/g, "$1");
+export const withoutLinks = (text) =>
+  text
+    .replace(/\[([^\]]+)\]\(https?:\/\/[^)]+\)/gi, "$1")
+    .replace(/(?:https?:\/\/|www\.)[^\s<>]+/gi, "")
+    .replace(/\n[ \t]+\n/g, "\n\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+export const plainCaption = (text) =>
+  withoutLinks(text).replace(/\*\*([^*]+)\*\*/g, "$1");

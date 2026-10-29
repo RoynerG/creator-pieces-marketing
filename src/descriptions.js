@@ -52,7 +52,6 @@ export function initDescriptions({ getProperty, onChange, notice }) {
     operation: "#caption-operation",
     city: "#caption-city",
     phone: "#caption-phone",
-    website: "#caption-website",
     brand: "#caption-brand",
   };
   async function api(route, input, signal) {
@@ -141,7 +140,8 @@ export function initDescriptions({ getProperty, onChange, notice }) {
       $(`#${id}`).disabled = !hasOutput || busy;
     $("#edit-description").disabled = (!hasOutput && !editing) || busy;
     $("#description-edit").disabled = busy;
-    for (const selector of Object.values(fields)) $(selector).disabled = busy;
+    for (const selector of Object.values(fields))
+      $(selector).disabled = busy || selector === "#caption-operation";
     for (const id of ["configure-ai", "generate-description", "use-piece-data"])
       $(`#${id}`).disabled = busy;
     $("#cancel-description").hidden = !busy;
@@ -248,7 +248,12 @@ export function initDescriptions({ getProperty, onChange, notice }) {
     }
     controller = new AbortController();
     editing = false;
-    const snapshot = { ...data };
+    const snapshot = {
+      ...data,
+      reference: getProperty().reference,
+      operation: getProperty().operation,
+      publicationCode: getProperty().reference,
+    };
     $("#writing-status").textContent =
       action === "generate"
         ? "MiniMax está redactando tu publicación…"
@@ -375,6 +380,8 @@ export function initDescriptions({ getProperty, onChange, notice }) {
   sync();
   refreshConfig();
   return {
+    show: showWorkspace,
+    isBusy: () => busy,
     get: () => normalizeDescription(data),
     set,
     reset() {
