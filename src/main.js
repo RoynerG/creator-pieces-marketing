@@ -246,8 +246,10 @@ function saveDraft() {
     });
   return saveQueue;
 }
-async function flushPublication() {
-  await saveDraft();
+async function flushPublication(force = false) {
+  // A clean window must not rewrite an older copy saved by another window.
+  if (force || saveTimer || saveError) await saveDraft();
+  else await saveQueue;
   if (saveError) throw saveError;
 }
 async function openPublication(code, reuseDraft = false, imported = null) {
@@ -315,7 +317,7 @@ async function openPublication(code, reuseDraft = false, imported = null) {
     $("#active-publication-code").textContent = `#${code}`;
     descriptions.show(false);
     showTab("property");
-    await flushPublication();
+    await flushPublication(true);
     publications.showEditor();
     notice(
       `Publicación #${code} abierta. Fotos y descripción se guardan juntas.`,
@@ -809,7 +811,7 @@ async function start() {
           activeRevision = record.revision;
         }
         activeCode = code;
-        if (!record) await flushPublication();
+        if (!record) await flushPublication(true);
       } else {
         legacyDraft = draft;
         await publicationStore.archiveLegacy(draft);
