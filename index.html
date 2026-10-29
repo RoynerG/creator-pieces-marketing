@@ -75,7 +75,14 @@
                 <input
                   id="library-path"
                   placeholder="C:\Usuarios\TuUsuario\Fotos"
-                /><button class="button navy" type="submit">
+                /><button
+                  id="choose-library-folder"
+                  class="button outline"
+                  type="button"
+                  hidden
+                >
+                  Elegir carpeta</button
+                ><button class="button navy" type="submit">
                   Conectar carpeta
                 </button>
               </div>
@@ -372,9 +379,7 @@
               </section>
               <div class="panel-footer">
                 <i data-icon="lock"></i
-                ><span id="save-status"
-                  >Guardado automático en este navegador</span
-                >
+                ><span id="save-status">Guardado automático en SQLite</span>
               </div>
             </aside>
             <section
@@ -667,6 +672,17 @@
         </div>
       </footer>
     </main>
+    <div id="desktop-status" class="desktop-status" hidden>
+      <span id="desktop-version"></span
+      ><span id="desktop-update-message" role="status"></span
+      ><button id="check-updates" type="button" class="text-button">
+        Buscar actualizaciones</button
+      ><button id="open-data-folder" type="button" class="text-button">
+        Carpeta de datos</button
+      ><button id="install-update" type="button" class="button navy" hidden>
+        Reiniciar y actualizar
+      </button>
+    </div>
     <div
       id="notice"
       class="notice"
@@ -772,18 +788,19 @@
         </p>
         <label for="minimax-model">Modelo</label
         ><select id="minimax-model">
+          <option>MiniMax-M3.1-Flash</option>
+          <option>MiniMax-M3</option>
           <option>MiniMax-M2.7</option>
           <option>MiniMax-M2.5</option>
-          <option>MiniMax-M3.1-Flash</option>
         </select>
         <label class="remember-key"
           ><input type="checkbox" id="remember-minimax-key" /> Recordar la clave
           en este equipo</label
         >
         <p class="helper">
-          Si lo activas, se guardará en un archivo local sin cifrar dentro de
-          .local, excluido de Git. Si no, se conserva solo hasta cerrar el
-          servidor.
+          Si lo activas, se guardará en un archivo local sin cifrar dentro de la
+          carpeta de datos de Piezas, fuera del repositorio. Si no, se conserva
+          solo hasta cerrar el servidor.
         </p>
         <p
           id="ai-settings-status"

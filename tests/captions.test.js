@@ -93,13 +93,14 @@ test("legacy and newly generated descriptions exclude web links", () => {
 test("provider receives subscription credential only via Authorization; output excludes it", async () => {
   const result = await generateCaption({
     apiKey: testKey,
-    model: "MiniMax-M2.7",
+    model: "MiniMax-M3",
     data: validateCaptionRequest(input),
     fetchImpl: async (url, options) => {
       assert.equal(url, "https://api.minimax.io/v1/chat/completions");
       assert.equal(options.headers.Authorization, `Bearer ${testKey}`);
       assert.equal(options.redirect, "error");
       const request = JSON.parse(options.body);
+      assert.equal(request.model, "MiniMax-M3");
       assert.equal(
         JSON.parse(request.messages[1].content).propertySheet,
         input.source,

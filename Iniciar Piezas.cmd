@@ -3,7 +3,7 @@ setlocal
 cd /d "%~dp0"
 where node >nul 2>nul
 if errorlevel 1 (
-  echo Instala Node.js 22.12 o superior desde https://nodejs.org y vuelve a abrir este archivo.
+  echo Instala Node.js 24 o superior desde https://nodejs.org y vuelve a abrir este archivo.
   pause
   exit /b 1
 )

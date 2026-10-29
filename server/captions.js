@@ -1,5 +1,10 @@
 import { withoutLinks } from "../src/caption-model.js";
-export const MODELS = ["MiniMax-M2.7", "MiniMax-M2.5", "MiniMax-M3.1-Flash"];
+export const MODELS = [
+  "MiniMax-M3.1-Flash",
+  "MiniMax-M3",
+  "MiniMax-M2.7",
+  "MiniMax-M2.5",
+];
 export const DEFAULT_MODEL = MODELS[0];
 export class ApiError extends Error {
   constructor(status, message) {

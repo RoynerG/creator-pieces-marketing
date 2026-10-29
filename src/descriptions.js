@@ -45,7 +45,11 @@ export function initDescriptions({ getProperty, onChange, notice }) {
     busy = false,
     controller,
     generation = 0;
-  let config = { configured: false, model: "MiniMax-M2.7", remember: false },
+  let config = {
+      configured: false,
+      model: "MiniMax-M3.1-Flash",
+      remember: false,
+    },
     available = false;
   const fields = {
     source: "#property-sheet",

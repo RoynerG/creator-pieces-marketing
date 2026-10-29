@@ -10,7 +10,7 @@ export function publicationZipName(code) {
     );
   return `${code}.zip`;
 }
-export function createPublicationStore(database) {
+export function createLegacyPublicationStore(database) {
   const read = (key) =>
     new Promise((resolve, reject) => {
       const request = database
@@ -20,79 +20,85 @@ export function createPublicationStore(database) {
       request.onsuccess = () => resolve(request.result);
       request.onerror = () => reject(request.error);
     });
-  return {
-    read,
-    archiveLegacy(project) {
-      return new Promise((resolve, reject) => {
-        const tx = database.transaction("projects", "readwrite"),
-          store = tx.objectStore("projects");
-        store.put(project, "legacy-uncoded-draft");
-        tx.oncomplete = resolve;
-        tx.onerror = tx.onabort = () => reject(tx.error);
-      });
-    },
-    async list() {
-      return new Promise((resolve, reject) => {
-        const request = database
-          .transaction("projects", "readonly")
-          .objectStore("projects")
-          .getAll(IDBKeyRange.bound("summary:", "summary:\uffff"));
-        request.onsuccess = () =>
-          resolve(request.result.sort((a, b) => b.updatedAt - a.updatedAt));
-        request.onerror = () => reject(request.error);
-      });
-    },
-    save(project, code, expectedRevision = 0, thumbnail = "") {
-      return new Promise((resolve, reject) => {
-        const tx = database.transaction("projects", "readwrite"),
-          store = tx.objectStore("projects");
-        let error, record;
-        if (!code) store.put(project, "draft");
-        else {
-          if (!validCode(code)) {
-            tx.abort();
-            reject(new Error("El código no es válido."));
-            return;
-          }
-          const request = store.get(`publication:${code}`);
-          request.onsuccess = () => {
-            if ((request.result?.revision || 0) !== expectedRevision) {
-              error = new Error(
-                "Esta publicación cambió en otra pestaña. Guarda una copia .piezas y recarga la app para abrir la versión guardada.",
-              );
-              tx.abort();
-              return;
+  return { read };
+}
+
+export function createPublicationStore() {
+  async function request(route, input) {
+    let response;
+    try {
+      response = await fetch(
+        `/api/projects/${route}`,
+        input
+          ? {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(input),
             }
-            record = {
-              project,
-              revision: expectedRevision + 1,
-              updatedAt: Date.now(),
-            };
-            store.put(record, `publication:${code}`);
-            store.put(
-              {
-                code,
-                updatedAt: record.updatedAt,
-                photos: project.photos.length,
-                description: !!project.description?.output?.trim(),
-                location: project.settings.location,
-                thumbnail,
-              },
-              `summary:${code}`,
-            );
-            store.put(project, "draft");
-          };
-        }
-        tx.oncomplete = () => resolve(record);
-        tx.onerror = tx.onabort = () =>
-          reject(
-            error ||
-              tx.error ||
-              new Error(
-                "No se pudo guardar la publicación. Descarga una copia .piezas.",
-              ),
-          );
-      });
-    },
+          : {},
+      );
+    } catch {
+      throw new Error(
+        "No se pudo conectar con el almacenamiento local de Piezas.",
+      );
+    }
+    let result;
+    try {
+      result = await response.json();
+    } catch {
+      throw new Error("Reinicia Piezas para activar SQLite.");
+    }
+    if (!response.ok)
+      throw new Error(result.error || "No se pudo guardar la publicación.");
+    return result;
+  }
+  return {
+    status: () => request("status"),
+    read: (key) => request(`read?key=${encodeURIComponent(key)}`),
+    list: () => request("list"),
+    archiveLegacy: (project) => request("legacy", { project }),
+    save: (project, code, revision = 0, thumbnail = "") =>
+      request("save", { project, code, revision, thumbnail }),
+    migrate: (key, project, thumbnail = "") =>
+      request("migrate", { key, project, thumbnail }),
   };
+}
+export async function migrateBrowserProjects(database, store) {
+  const existing = new Set(
+    (await store.list()).map((item) => `publication:${item.code}`),
+  );
+  const legacy = createLegacyPublicationStore(database);
+  const keys = await new Promise((resolve, reject) => {
+    const request = database
+      .transaction("projects", "readonly")
+      .objectStore("projects")
+      .getAllKeys();
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+  let failures = 0;
+  for (const key of keys) {
+    if (
+      typeof key !== "string" ||
+      (!key.startsWith("publication:") &&
+        !["draft", "legacy-uncoded-draft"].includes(key))
+    )
+      continue;
+    if (existing.has(key)) continue;
+    try {
+      if (!key.startsWith("publication:") && (await store.read(key))) continue;
+      const value = await legacy.read(key),
+        summary = key.startsWith("publication:")
+          ? await legacy.read(`summary:${key.slice(12)}`)
+          : null;
+      await store.migrate(
+        key,
+        key.startsWith("publication:") ? value.project : value,
+        summary?.thumbnail || "",
+      );
+    } catch {
+      failures++;
+    }
+  }
+  return failures;
 }

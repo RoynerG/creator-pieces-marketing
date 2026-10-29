@@ -5,3 +5,7 @@ public/demo/
 *.log
 .env
 .env.*
+release/
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm

@@ -1,0 +1,34 @@
+appId: com.roynerg.piezas
+productName: Piezas Estudio
+directories:
+  output: release
+files:
+  - dist/**/*
+  - "!dist/demo/**/*"
+  - desktop/**/*
+  - server/**/*
+  - src/model.js
+  - src/caption-model.js
+  - src/publications-store.js
+  - package.json
+asar: true
+npmRebuild: false
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+  artifactName: Piezas-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Piezas Estudio
+  deleteAppDataOnUninstall: false
+publish:
+  provider: github
+  owner: RoynerG
+  repo: creator-pieces-marketing
+  releaseType: release

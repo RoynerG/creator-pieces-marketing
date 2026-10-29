@@ -14,10 +14,12 @@ import { loadPieceFonts } from "./fonts.js";
 import { initDescriptions } from "./descriptions.js";
 import {
   createPublicationStore,
+  migrateBrowserProjects,
   validCode,
   publicationZipName,
 } from "./publications-store.js";
 import { initPublications } from "./publications.js";
+import { initDesktop } from "./desktop.js";
 import { icon, fillIcons } from "./icons.js";
 
 const $ = (selector) => document.querySelector(selector);
@@ -36,6 +38,7 @@ let selected = 0,
   renderFrame,
   database;
 let saveQueue = Promise.resolve();
+let initialized = false;
 let publicationStore,
   activeCode = "",
   activeRevision = 0,
@@ -64,6 +67,18 @@ const publications = initPublications({
   notice,
 });
 
+initDesktop({
+  notice,
+  flush: async () => {
+    if (!initialized) return;
+    if (busy)
+      throw new Error(
+        "Espera a que termine la carga o exportación antes de cerrar.",
+      );
+    descriptions.set(descriptions.get());
+    await flushPublication();
+  },
+});
 function notice(message, error = false, persistent = false) {
   clearTimeout(noticeTimer);
   $("#notice").textContent = message;
@@ -182,16 +197,6 @@ function openDatabase() {
       );
   });
 }
-function readDraft() {
-  return new Promise((resolve, reject) => {
-    const request = database
-      .transaction("projects", "readonly")
-      .objectStore("projects")
-      .get("draft");
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
 function saveDraft() {
   clearTimeout(saveTimer);
   saveTimer = undefined;
@@ -227,7 +232,7 @@ function saveDraft() {
       );
       if (code === activeCode && record) activeRevision = record.revision;
       saveError = null;
-      $("#save-status").textContent = "Guardado en este navegador";
+      $("#save-status").textContent = "Guardado en SQLite en este equipo";
       $("#publication-status").textContent = code
         ? `#${code} · Guardado`
         : "Borrador guardado";
@@ -323,7 +328,7 @@ async function openPublication(code, reuseDraft = false, imported = null) {
   }
 }
 function changed(structure = false) {
-  if (database) {
+  if (publicationStore) {
     $("#save-status").textContent = "Guardando cambios…";
     $("#publication-status").textContent = "Guardando cambios…";
     clearTimeout(saveTimer);
@@ -778,10 +783,22 @@ async function start() {
   }
   render();
   try {
-    database = await openDatabase();
-    publicationStore = createPublicationStore(database);
+    publicationStore = createPublicationStore();
+    await publicationStore.status();
+    try {
+      database = await openDatabase();
+      const failures = await migrateBrowserProjects(database, publicationStore);
+      if (failures)
+        notice(
+          "Algunos borradores antiguos no se pudieron migrar. Las copias del navegador se conservan; puedes importarlos como .piezas.",
+          true,
+          true,
+        );
+    } catch {
+      /* SQLite remains usable when browser storage is unavailable. */
+    }
     legacyDraft = await publicationStore.read("legacy-uncoded-draft");
-    const draft = await readDraft();
+    const draft = await publicationStore.read("draft");
     if (draft) {
       await hydrate(draft);
       const code = state.settings.reference.trim();
@@ -812,6 +829,7 @@ async function start() {
     $("main").inert = false;
     $(".app-header").inert = false;
   }
+  initialized = true;
   $("#save-project").disabled = true;
   try {
     const response = await fetch("/demo/1.png", { method: "HEAD" });
