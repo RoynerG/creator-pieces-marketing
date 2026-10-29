@@ -1,5 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { descriptionDefaults } from "../src/caption-model.js";
 import {
   containRect,
   normalizeSettings,
@@ -69,6 +70,7 @@ test("portable projects retain photos and colors", () => {
   const project = {
     version: 1,
     settings: { ...defaults, reference: "12238", accent: "#123456" },
+    description: { ...descriptionDefaults },
     logo: null,
     photos: [{ name: "Sala", src: "data:image/png;base64,YQ==" }],
   };

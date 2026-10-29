@@ -3,3 +3,5 @@ dist/
 public/demo/
 .local/
 *.log
+.env
+.env.*

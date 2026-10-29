@@ -1,4 +1,11 @@
 const paths = {
+  settings:
+    '<path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>',
+  copy: '<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',
+  expand: '<path d="M14 3h7v7M21 3l-7 7M10 21H3v-7M3 21l7-7"/>',
+  edit: '<path d="m16 3 5 5L8 21H3v-5ZM13 6l5 5"/>',
+  reply: '<path d="M4 3v7a3 3 0 0 0 3 3h13m-5-5 5 5-5 5"/>',
+  close: '<path d="m6 6 12 12M6 18 18 6"/>',
   save: '<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h12l4 4v12a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8V3"/>',
   frame:
     '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8M8 18h8"/>',

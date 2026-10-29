@@ -1,3 +1,4 @@
+import { normalizeDescription } from "./caption-model.js";
 export const WIDTH = 1080;
 export const HEIGHT = 1350;
 export const MAX_PHOTOS = 10;
@@ -74,6 +75,7 @@ export function validateProject(data) {
     throw new Error("El logo del proyecto no es válido.");
   return {
     version: 1,
+    description: normalizeDescription(data.description),
     settings: normalizeSettings(data.settings),
     logo: data.logo || null,
     photos: data.photos.map((photo) => {

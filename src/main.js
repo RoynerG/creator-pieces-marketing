@@ -11,6 +11,7 @@ import {
 } from "./model.js";
 import { renderPiece } from "./render.js";
 import { loadPieceFonts } from "./fonts.js";
+import { initDescriptions } from "./descriptions.js";
 import { icon, fillIcons } from "./icons.js";
 
 const $ = (selector) => document.querySelector(selector);
@@ -30,6 +31,11 @@ let selected = 0,
   database;
 let saveQueue = Promise.resolve();
 fillIcons();
+const descriptions = initDescriptions({
+  getProperty: () => state.settings,
+  onChange: () => changed(),
+  notice,
+});
 
 function notice(message, error = false, persistent = false) {
   clearTimeout(noticeTimer);
@@ -128,6 +134,7 @@ async function fileImage(file, isLogo = false) {
 function serialize() {
   return {
     version: 1,
+    description: descriptions.get(),
     settings: { ...state.settings },
     logo: state.logo,
     photos: state.photos.map(({ name, src }) => ({ name, src })),
@@ -206,6 +213,7 @@ async function hydrate(project) {
     photos.push({ ...photo, image: await loadImage(photo.src) });
   const logoImage = clean.logo ? await loadImage(clean.logo) : null;
   state = { settings: clean.settings, photos, logo: clean.logo, logoImage };
+  descriptions.set(clean.description);
   selected = 0;
   syncControls();
   updatePhotoList();
@@ -385,7 +393,8 @@ async function confirmReplace(title, description) {
     !state.photos.length &&
     !state.settings.reference &&
     !state.settings.location &&
-    !state.logo
+    !state.logo &&
+    !descriptions.hasContent()
   )
     return true;
   $("#confirm-title").textContent = title;
@@ -496,6 +505,7 @@ $("#new-project").addEventListener("click", async () => {
     ]),
   );
   state = { ...state, settings: { ...defaults, ...branding }, photos: [] };
+  descriptions.reset();
   selected = 0;
   changed(true);
   saveDraft();

@@ -32,309 +32,540 @@
       </div>
     </header>
     <main id="editor">
-      <section class="page-heading">
-        <div>
-          <div class="eyebrow">DE TUS FOTOS A TU PRÓXIMA PUBLICACIÓN</div>
-          <h1>Un inmueble. Todo un carrusel.</h1>
-          <p>Tu portada, tus fotos y tu marca. Listas en minutos.</p>
-        </div>
-        <div class="format-badge">
-          <i data-icon="frame"></i
-          ><span
-            ><strong>1080 × 1350 px</strong
-            ><small>Vertical · Formato 4:5</small></span
-          >
-        </div>
-      </section>
-      <div class="studio">
-        <aside class="settings-panel" aria-label="Configuración del carrusel">
-          <div class="panel-title">
-            <span class="step-number">01</span>
-            <h2>Prepara tu publicación</h2>
+      <nav class="workspace-switch" aria-label="Herramientas del estudio">
+        <button
+          type="button"
+          id="show-pieces"
+          aria-pressed="true"
+          aria-controls="pieces-workspace"
+        >
+          <i data-icon="layers"></i> Crear piezas
+        </button>
+        <button
+          type="button"
+          id="show-description"
+          aria-pressed="false"
+          aria-controls="description-workspace"
+        >
+          <i data-icon="spark"></i> Crear descripción
+        </button>
+      </nav>
+      <div id="pieces-workspace">
+        <section class="page-heading">
+          <div>
+            <div class="eyebrow">DE TUS FOTOS A TU PRÓXIMA PUBLICACIÓN</div>
+            <h1>Un inmueble. Todo un carrusel.</h1>
+            <p>Tu portada, tus fotos y tu marca. Listas en minutos.</p>
           </div>
-          <div class="tabs" role="tablist" aria-label="Configuración">
-            <button
-              id="tab-property"
-              role="tab"
-              aria-selected="true"
-              aria-controls="panel-property"
-              data-tab="property"
+          <div class="format-badge">
+            <i data-icon="frame"></i
+            ><span
+              ><strong>1080 × 1350 px</strong
+              ><small>Vertical · Formato 4:5</small></span
             >
-              Inmueble</button
-            ><button
-              id="tab-photos"
-              role="tab"
-              aria-selected="false"
-              aria-controls="panel-photos"
-              tabindex="-1"
-              data-tab="photos"
-            >
-              Fotografías <span id="photo-count">0</span></button
-            ><button
-              id="tab-brand"
-              role="tab"
-              aria-selected="false"
-              aria-controls="panel-brand"
-              tabindex="-1"
-              data-tab="brand"
-            >
-              Tu marca
-            </button>
-          </div>
-          <section
-            id="panel-property"
-            role="tabpanel"
-            aria-labelledby="tab-property"
-            class="tab-panel"
-          >
-            <div class="section-heading">
-              <h3>Datos del inmueble</h3>
-              <p>Se mostrarán en la primera pieza.</p>
-            </div>
-            <label for="operation">Tipo de negocio</label
-            ><select id="operation" data-field="operation">
-              <option value="EN VENTA">En venta</option>
-              <option value="EN ARRIENDO">En arriendo</option>
-            </select>
-            <label for="property-type">Tipo de inmueble</label
-            ><select id="property-type" data-field="propertyType">
-              <option>Apartamento</option>
-              <option>Casa</option>
-              <option>Penthouse</option>
-              <option>Local comercial</option>
-              <option>Oficina</option>
-              <option>Lote</option>
-              <option>Finca</option>
-              <option>Bodega</option>
-            </select>
-            <label for="location">Barrio o ubicación</label
-            ><input
-              id="location"
-              data-field="location"
-              placeholder="Ej. Manga, Cartagena"
-              maxlength="60"
-            />
-            <label for="reference">Código del inmueble</label>
-            <div class="input-prefix">
-              <span>#</span
-              ><input
-                id="reference"
-                data-field="reference"
-                placeholder="12238"
-                maxlength="24"
-              />
-            </div>
-            <div class="field-row">
-              <div>
-                <label for="bedrooms"
-                  ><i data-icon="bed"></i> Habitaciones</label
-                ><input
-                  id="bedrooms"
-                  data-field="bedrooms"
-                  type="number"
-                  min="0"
-                  max="99"
-                  step="1"
-                />
-              </div>
-              <div>
-                <label for="bathrooms"><i data-icon="bath"></i> Baños</label
-                ><input
-                  id="bathrooms"
-                  data-field="bathrooms"
-                  type="number"
-                  min="0"
-                  max="99"
-                  step="1"
-                />
-              </div>
-            </div>
-            <label for="area">Área del inmueble</label>
-            <div class="input-suffix">
-              <input
-                id="area"
-                data-field="area"
-                type="number"
-                min="0"
-                max="9999999"
-                step="0.01"
-              /><span>m²</span>
-            </div>
-            <div class="tip">
-              <i data-icon="spark"></i>
-              <p>
-                <strong>Una sola vez, en todas tus piezas.</strong> La portada
-                se actualiza mientras escribes.
-              </p>
-            </div>
-            <button type="button" class="button navy full" id="go-photos">
-              Continuar con las fotos <i data-icon="arrow"></i>
-            </button>
-          </section>
-          <section
-            id="panel-photos"
-            role="tabpanel"
-            aria-labelledby="tab-photos"
-            class="tab-panel"
-            hidden
-          >
-            <div class="section-heading">
-              <h3>Las fotos cuentan la historia</h3>
-              <p>La primera foto será tu portada. Añade hasta 10.</p>
-            </div>
-            <label class="dropzone" id="dropzone" for="photos-input"
-              ><i data-icon="upload"></i><strong>Arrastra tus fotos aquí</strong
-              ><span>o haz clic para elegir archivos</span
-              ><small>JPG, PNG o WebP · Máx. 25 MB por foto</small></label
-            ><input
-              class="sr-only"
-              id="photos-input"
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              multiple
-            />
-            <div id="photo-list" class="photo-list"></div>
-            <p class="helper">
-              Usa las flechas para ordenar. Cada foto se muestra completa, sin
-              recortes ni deformación.
-            </p>
-          </section>
-          <section
-            id="panel-brand"
-            role="tabpanel"
-            aria-labelledby="tab-brand"
-            class="tab-panel"
-            hidden
-          >
-            <div class="section-heading">
-              <h3>Hecho con tu identidad</h3>
-              <p>El mismo logo en todo el carrusel.</p>
-            </div>
-            <label class="logo-upload" for="logo-input"
-              ><span id="logo-swatch"><i data-icon="image"></i></span
-              ><span
-                ><strong>Cargar tu logo</strong
-                ><small>PNG transparente, JPG o WebP</small></span
-              ><i data-icon="upload"></i></label
-            ><input
-              class="sr-only"
-              id="logo-input"
-              type="file"
-              accept="image/png,image/jpeg,image/webp"
-            /><button class="text-button" id="remove-logo" type="button" hidden>
-              Quitar logo
-            </button>
-            <div class="color-options">
-              <label for="navy"
-                >Color principal
-                <input id="navy" type="color" data-field="navy" /></label
-              ><label for="accent"
-                >Color de acento
-                <input id="accent" type="color" data-field="accent" /></label
-              ><label for="secondary"
-                >Fondo secundario
-                <input id="secondary" type="color" data-field="secondary"
-              /></label>
-            </div>
-            <label for="logo-size"
-              >Tamaño del logo
-              <output id="logo-size-output">120 px</output></label
-            ><input
-              id="logo-size"
-              data-field="logoSize"
-              type="range"
-              min="60"
-              max="200"
-              step="5"
-            />
-            <label for="logo-position">Posición del logo</label
-            ><select id="logo-position" data-field="logoPosition">
-              <option value="right">Abajo a la derecha</option>
-              <option value="left">Abajo a la izquierda</option>
-            </select>
-            <p class="helper">
-              En la portada, el logo se mantiene en la franja derecha. En las
-              demás fotos se usa la posición elegida.
-            </p>
-            <button type="button" class="button outline full" id="reset-colors">
-              Restablecer colores del ejemplo
-            </button>
-          </section>
-          <div class="panel-footer">
-            <i data-icon="lock"></i
-            ><span id="save-status">Guardado automático en este navegador</span>
-          </div>
-        </aside>
-        <section class="preview-panel" aria-label="Vista previa de las piezas">
-          <div class="preview-toolbar">
-            <div class="preview-label">
-              <span class="step-number">02</span>
-              <h2>Vista previa</h2>
-              <span class="live-badge">EN VIVO</span>
-            </div>
-            <div class="preview-nav">
-              <button
-                id="previous"
-                class="icon-button"
-                aria-label="Pieza anterior"
-              >
-                <i data-icon="chevron-left"></i></button
-              ><span id="slide-counter">01 / 10</span
-              ><button
-                id="next"
-                class="icon-button"
-                aria-label="Pieza siguiente"
-              >
-                <i data-icon="chevron-right"></i>
-              </button>
-            </div>
-          </div>
-          <div class="preview-stage">
-            <div class="canvas-wrap">
-              <canvas
-                id="preview"
-                width="1080"
-                height="1350"
-                role="img"
-                aria-label="Vista previa de la portada del inmueble"
-              ></canvas
-              ><span class="canvas-caption" id="canvas-caption"
-                >01 — PORTADA</span
-              >
-            </div>
-            <div class="stage-note">
-              <span class="vertical-rule"></span> DISEÑADO PARA DESTACAR
-            </div>
-          </div>
-          <div
-            class="filmstrip"
-            id="filmstrip"
-            aria-label="Selecciona una pieza"
-          ></div>
-          <div class="preview-bottom">
-            <span
-              ><i data-icon="layers"></i
-              ><span id="pieces-summary">1 portada + 9 fotografías</span></span
-            ><button class="text-button" id="download-one" type="button">
-              <i data-icon="download"></i> Descargar esta pieza
-            </button>
           </div>
         </section>
-      </div>
-      <section class="export-bar">
-        <div>
-          <span class="step-number">03</span>
-          <div>
-            <h2>Tu próxima publicación empieza aquí.</h2>
-            <p id="export-help">
-              Carga tus fotos y descarga el carrusel completo.
-            </p>
-          </div>
+        <div class="studio">
+          <aside class="settings-panel" aria-label="Configuración del carrusel">
+            <div class="panel-title">
+              <span class="step-number">01</span>
+              <h2>Prepara tu publicación</h2>
+            </div>
+            <div class="tabs" role="tablist" aria-label="Configuración">
+              <button
+                id="tab-property"
+                role="tab"
+                aria-selected="true"
+                aria-controls="panel-property"
+                data-tab="property"
+              >
+                Inmueble</button
+              ><button
+                id="tab-photos"
+                role="tab"
+                aria-selected="false"
+                aria-controls="panel-photos"
+                tabindex="-1"
+                data-tab="photos"
+              >
+                Fotografías <span id="photo-count">0</span></button
+              ><button
+                id="tab-brand"
+                role="tab"
+                aria-selected="false"
+                aria-controls="panel-brand"
+                tabindex="-1"
+                data-tab="brand"
+              >
+                Tu marca
+              </button>
+            </div>
+            <section
+              id="panel-property"
+              role="tabpanel"
+              aria-labelledby="tab-property"
+              class="tab-panel"
+            >
+              <div class="section-heading">
+                <h3>Datos del inmueble</h3>
+                <p>Se mostrarán en la primera pieza.</p>
+              </div>
+              <label for="operation">Tipo de negocio</label
+              ><select id="operation" data-field="operation">
+                <option value="EN VENTA">En venta</option>
+                <option value="EN ARRIENDO">En arriendo</option>
+              </select>
+              <label for="property-type">Tipo de inmueble</label
+              ><select id="property-type" data-field="propertyType">
+                <option>Apartamento</option>
+                <option>Casa</option>
+                <option>Penthouse</option>
+                <option>Local comercial</option>
+                <option>Oficina</option>
+                <option>Lote</option>
+                <option>Finca</option>
+                <option>Bodega</option>
+              </select>
+              <label for="location">Barrio o ubicación</label
+              ><input
+                id="location"
+                data-field="location"
+                placeholder="Ej. Manga, Cartagena"
+                maxlength="60"
+              />
+              <label for="reference">Código del inmueble</label>
+              <div class="input-prefix">
+                <span>#</span
+                ><input
+                  id="reference"
+                  data-field="reference"
+                  placeholder="12238"
+                  maxlength="24"
+                />
+              </div>
+              <div class="field-row">
+                <div>
+                  <label for="bedrooms"
+                    ><i data-icon="bed"></i> Habitaciones</label
+                  ><input
+                    id="bedrooms"
+                    data-field="bedrooms"
+                    type="number"
+                    min="0"
+                    max="99"
+                    step="1"
+                  />
+                </div>
+                <div>
+                  <label for="bathrooms"><i data-icon="bath"></i> Baños</label
+                  ><input
+                    id="bathrooms"
+                    data-field="bathrooms"
+                    type="number"
+                    min="0"
+                    max="99"
+                    step="1"
+                  />
+                </div>
+              </div>
+              <label for="area">Área del inmueble</label>
+              <div class="input-suffix">
+                <input
+                  id="area"
+                  data-field="area"
+                  type="number"
+                  min="0"
+                  max="9999999"
+                  step="0.01"
+                /><span>m²</span>
+              </div>
+              <div class="tip">
+                <i data-icon="spark"></i>
+                <p>
+                  <strong>Una sola vez, en todas tus piezas.</strong> La portada
+                  se actualiza mientras escribes.
+                </p>
+              </div>
+              <button type="button" class="button navy full" id="go-photos">
+                Continuar con las fotos <i data-icon="arrow"></i>
+              </button>
+            </section>
+            <section
+              id="panel-photos"
+              role="tabpanel"
+              aria-labelledby="tab-photos"
+              class="tab-panel"
+              hidden
+            >
+              <div class="section-heading">
+                <h3>Las fotos cuentan la historia</h3>
+                <p>La primera foto será tu portada. Añade hasta 10.</p>
+              </div>
+              <label class="dropzone" id="dropzone" for="photos-input"
+                ><i data-icon="upload"></i
+                ><strong>Arrastra tus fotos aquí</strong
+                ><span>o haz clic para elegir archivos</span
+                ><small>JPG, PNG o WebP · Máx. 25 MB por foto</small></label
+              ><input
+                class="sr-only"
+                id="photos-input"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+              />
+              <div id="photo-list" class="photo-list"></div>
+              <p class="helper">
+                Usa las flechas para ordenar. Cada foto se muestra completa, sin
+                recortes ni deformación.
+              </p>
+            </section>
+            <section
+              id="panel-brand"
+              role="tabpanel"
+              aria-labelledby="tab-brand"
+              class="tab-panel"
+              hidden
+            >
+              <div class="section-heading">
+                <h3>Hecho con tu identidad</h3>
+                <p>El mismo logo en todo el carrusel.</p>
+              </div>
+              <label class="logo-upload" for="logo-input"
+                ><span id="logo-swatch"><i data-icon="image"></i></span
+                ><span
+                  ><strong>Cargar tu logo</strong
+                  ><small>PNG transparente, JPG o WebP</small></span
+                ><i data-icon="upload"></i></label
+              ><input
+                class="sr-only"
+                id="logo-input"
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+              /><button
+                class="text-button"
+                id="remove-logo"
+                type="button"
+                hidden
+              >
+                Quitar logo
+              </button>
+              <div class="color-options">
+                <label for="navy"
+                  >Color principal
+                  <input id="navy" type="color" data-field="navy" /></label
+                ><label for="accent"
+                  >Color de acento
+                  <input id="accent" type="color" data-field="accent" /></label
+                ><label for="secondary"
+                  >Fondo secundario
+                  <input id="secondary" type="color" data-field="secondary"
+                /></label>
+              </div>
+              <label for="logo-size"
+                >Tamaño del logo
+                <output id="logo-size-output">120 px</output></label
+              ><input
+                id="logo-size"
+                data-field="logoSize"
+                type="range"
+                min="60"
+                max="200"
+                step="5"
+              />
+              <label for="logo-position">Posición del logo</label
+              ><select id="logo-position" data-field="logoPosition">
+                <option value="right">Abajo a la derecha</option>
+                <option value="left">Abajo a la izquierda</option>
+              </select>
+              <p class="helper">
+                En la portada, el logo se mantiene en la franja derecha. En las
+                demás fotos se usa la posición elegida.
+              </p>
+              <button
+                type="button"
+                class="button outline full"
+                id="reset-colors"
+              >
+                Restablecer colores del ejemplo
+              </button>
+            </section>
+            <div class="panel-footer">
+              <i data-icon="lock"></i
+              ><span id="save-status"
+                >Guardado automático en este navegador</span
+              >
+            </div>
+          </aside>
+          <section
+            class="preview-panel"
+            aria-label="Vista previa de las piezas"
+          >
+            <div class="preview-toolbar">
+              <div class="preview-label">
+                <span class="step-number">02</span>
+                <h2>Vista previa</h2>
+                <span class="live-badge">EN VIVO</span>
+              </div>
+              <div class="preview-nav">
+                <button
+                  id="previous"
+                  class="icon-button"
+                  aria-label="Pieza anterior"
+                >
+                  <i data-icon="chevron-left"></i></button
+                ><span id="slide-counter">01 / 10</span
+                ><button
+                  id="next"
+                  class="icon-button"
+                  aria-label="Pieza siguiente"
+                >
+                  <i data-icon="chevron-right"></i>
+                </button>
+              </div>
+            </div>
+            <div class="preview-stage">
+              <div class="canvas-wrap">
+                <canvas
+                  id="preview"
+                  width="1080"
+                  height="1350"
+                  role="img"
+                  aria-label="Vista previa de la portada del inmueble"
+                ></canvas
+                ><span class="canvas-caption" id="canvas-caption"
+                  >01 — PORTADA</span
+                >
+              </div>
+              <div class="stage-note">
+                <span class="vertical-rule"></span> DISEÑADO PARA DESTACAR
+              </div>
+            </div>
+            <div
+              class="filmstrip"
+              id="filmstrip"
+              aria-label="Selecciona una pieza"
+            ></div>
+            <div class="preview-bottom">
+              <span
+                ><i data-icon="layers"></i
+                ><span id="pieces-summary"
+                  >1 portada + 9 fotografías</span
+                ></span
+              ><button class="text-button" id="download-one" type="button">
+                <i data-icon="download"></i> Descargar esta pieza
+              </button>
+            </div>
+          </section>
         </div>
-        <button class="button yellow" id="export-all" type="button">
-          <i data-icon="download"></i><span>Descargar carrusel</span
-          ><span class="button-tag">ZIP</span>
-        </button>
+        <section class="export-bar">
+          <div>
+            <span class="step-number">03</span>
+            <div>
+              <h2>Tu próxima publicación empieza aquí.</h2>
+              <p id="export-help">
+                Carga tus fotos y descarga el carrusel completo.
+              </p>
+            </div>
+          </div>
+          <button class="button yellow" id="export-all" type="button">
+            <i data-icon="download"></i><span>Descargar carrusel</span
+            ><span class="button-tag">ZIP</span>
+          </button>
+        </section>
+      </div>
+      <section
+        id="description-workspace"
+        hidden
+        aria-label="Generador de descripciones"
+      >
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">EL TEXTO QUE ACOMPAÑA TUS PIEZAS</div>
+            <h1>De la ficha a la publicación.</h1>
+            <p>Pega los datos del inmueble. Dale forma con tu voz.</p>
+          </div>
+          <button type="button" class="button outline" id="configure-ai">
+            <i data-icon="settings"></i> Configurar MiniMax
+          </button>
+        </div>
+        <div class="description-grid">
+          <section class="description-input-card" aria-label="Ficha y contacto">
+            <div class="panel-title">
+              <span class="step-number">01</span>
+              <h2>La información del inmueble</h2>
+            </div>
+            <div class="description-fields">
+              <label for="property-sheet">Pega la ficha completa</label>
+              <textarea
+                id="property-sheet"
+                rows="13"
+                maxlength="18000"
+                placeholder="Código ID: 12238&#10;Descripción&#10;Excelente apartamento con vista a la bahía…&#10;&#10;Especificaciones&#10;Habitaciones: 4&#10;Baños: 5&#10;Parqueaderos: 2&#10;Área construida: 212 m²&#10;&#10;Características internas y externas…"
+              ></textarea>
+              <div class="sheet-meta">
+                <span id="sheet-count">0 / 18.000 caracteres</span
+                ><button type="button" id="use-piece-data" class="text-button">
+                  Usar datos de las piezas
+                </button>
+              </div>
+              <div class="field-row">
+                <div>
+                  <label for="caption-operation">Negocio</label
+                  ><select id="caption-operation">
+                    <option value="EN VENTA">En venta</option>
+                    <option value="EN ARRIENDO">En arriendo</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="caption-city">Ciudad</label
+                  ><input
+                    id="caption-city"
+                    maxlength="100"
+                    placeholder="Cartagena"
+                  />
+                </div>
+              </div>
+              <details class="contact-settings" open>
+                <summary>Tu contacto y marca</summary>
+                <label for="caption-phone">Teléfono de contacto</label
+                ><input id="caption-phone" type="tel" maxlength="40" />
+                <label for="caption-website">Sitio web</label
+                ><input
+                  id="caption-website"
+                  type="url"
+                  maxlength="300"
+                  placeholder="https://tuinmobiliaria.com/"
+                />
+                <label for="caption-brand">Marca para los hashtags</label
+                ><input id="caption-brand" maxlength="80" />
+                <p class="helper">
+                  Estos datos se incluyen en el texto final. Puedes dejarlos
+                  vacíos para omitirlos.
+                </p>
+              </details>
+              <p class="ai-connection" id="ai-connection">
+                Comprobando conexión local…
+              </p>
+              <button
+                type="button"
+                class="button navy full"
+                id="generate-description"
+              >
+                <i data-icon="spark"></i><span>Generar descripción</span>
+              </button>
+              <button
+                type="button"
+                class="button outline full"
+                id="cancel-description"
+                hidden
+              >
+                Cancelar generación
+              </button>
+              <p class="helper">
+                Al generar o ajustar el texto se envían la ficha y los datos de
+                redacción a MiniMax. Tus fotos no se envían.
+              </p>
+              <p
+                class="description-error"
+                id="description-error"
+                role="alert"
+                hidden
+              ></p>
+            </div>
+          </section>
+          <section
+            id="description-result"
+            class="description-result"
+            aria-label="Descripción generada"
+          >
+            <div class="writing-card">
+              <div class="writing-toolbar">
+                <span>Tu publicación</span>
+                <div>
+                  <button
+                    type="button"
+                    class="writing-tool"
+                    id="edit-description"
+                    title="Editar texto"
+                    aria-label="Editar descripción"
+                    disabled
+                  >
+                    <i data-icon="edit"></i></button
+                  ><button
+                    type="button"
+                    class="writing-tool"
+                    id="copy-description"
+                    title="Copiar texto"
+                    aria-label="Copiar descripción"
+                    disabled
+                  >
+                    <i data-icon="copy"></i></button
+                  ><button
+                    type="button"
+                    class="writing-tool"
+                    id="expand-description"
+                    title="Ampliar"
+                    aria-label="Ampliar descripción"
+                    disabled
+                  >
+                    <i data-icon="expand"></i>
+                  </button>
+                </div>
+              </div>
+              <div id="description-empty" class="description-empty">
+                <i data-icon="spark"></i>
+                <h2>Una buena ficha. Una mejor publicación.</h2>
+                <p>
+                  Aquí aparecerá tu texto con título, características, contacto
+                  y hashtags, listo para copiar.
+                </p>
+                <span
+                  >El contenido se genera a partir de los datos que
+                  pegues.</span
+                >
+              </div>
+              <div id="description-output" class="caption-prose" hidden></div>
+              <label class="sr-only" for="description-edit"
+                >Editar el texto generado</label
+              ><textarea
+                id="description-edit"
+                class="caption-editor"
+                rows="20"
+                maxlength="10000"
+                hidden
+              ></textarea>
+              <div
+                class="writing-status"
+                id="writing-status"
+                role="status"
+                aria-live="polite"
+              ></div>
+            </div>
+            <div class="refinement-actions">
+              <button type="button" id="caption-cta" disabled>
+                <i data-icon="reply"></i> Incluir un llamado a la acción más
+                directo</button
+              ><button type="button" id="caption-shorter" disabled>
+                <i data-icon="reply"></i> Hacer el texto más breve y escaneable
+              </button>
+            </div>
+            <div class="caption-footer">
+              <span id="caption-length">0 caracteres</span
+              ><button
+                type="button"
+                id="undo-description"
+                class="text-button"
+                hidden
+              >
+                Volver al texto anterior
+              </button>
+            </div>
+            <p class="helper">
+              Revisa los datos antes de publicar. Puedes editar el resultado
+              directamente.
+            </p>
+          </section>
+        </div>
       </section>
       <footer class="page-footer">
         <span>Menos tiempo diseñando. Más tiempo conectando.</span>
@@ -371,6 +602,92 @@
           ><button class="button navy" value="confirm">Continuar</button>
         </div>
       </form>
+    </dialog>
+    <dialog id="ai-settings-dialog" aria-labelledby="ai-settings-title">
+      <form id="ai-settings-form">
+        <div class="dialog-heading">
+          <h2 id="ai-settings-title">MiniMax Coding Plan</h2>
+          <button
+            class="icon-button"
+            type="button"
+            id="close-ai-settings"
+            aria-label="Cerrar configuración"
+          >
+            <i data-icon="close"></i>
+          </button>
+        </div>
+        <p>
+          Conecta tu clave de suscripción para redactar y mejorar las
+          descripciones.
+        </p>
+        <label for="minimax-key">Clave de suscripción</label
+        ><input
+          id="minimax-key"
+          type="password"
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="sk-cp…"
+          maxlength="510"
+        />
+        <p class="helper" id="minimax-key-hint">
+          La clave se envía solo al servidor local y a MiniMax. Nunca se incluye
+          en tus archivos .piezas.
+        </p>
+        <label for="minimax-model">Modelo</label
+        ><select id="minimax-model">
+          <option>MiniMax-M2.7</option>
+          <option>MiniMax-M2.5</option>
+          <option>MiniMax-M3.1-Flash</option>
+        </select>
+        <label class="remember-key"
+          ><input type="checkbox" id="remember-minimax-key" /> Recordar la clave
+          en este equipo</label
+        >
+        <p class="helper">
+          Si lo activas, se guardará en un archivo local sin cifrar dentro de
+          .local, excluido de Git. Si no, se conserva solo hasta cerrar el
+          servidor.
+        </p>
+        <p
+          id="ai-settings-status"
+          class="helper"
+          role="status"
+          aria-live="polite"
+        ></p>
+        <div class="dialog-actions">
+          <button type="button" class="button quiet" id="forget-minimax" hidden>
+            Olvidar clave</button
+          ><button type="submit" class="button navy" id="save-minimax">
+            Guardar configuración
+          </button>
+        </div>
+      </form>
+    </dialog>
+    <dialog
+      id="expanded-description"
+      aria-labelledby="expanded-description-title"
+    >
+      <div class="dialog-heading">
+        <h2 id="expanded-description-title">Tu publicación</h2>
+        <button
+          type="button"
+          id="close-expanded-description"
+          class="icon-button"
+          aria-label="Cerrar vista ampliada"
+        >
+          <i data-icon="close"></i>
+        </button>
+      </div>
+      <div id="expanded-description-output" class="caption-prose"></div>
+      <div class="dialog-actions">
+        <button
+          type="button"
+          id="copy-expanded-description"
+          class="button yellow"
+        >
+          <i data-icon="copy"></i> Copiar texto
+        </button>
+      </div>
     </dialog>
     <script type="module" src="/src/main.js"></script>
   </body>
