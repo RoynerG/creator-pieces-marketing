@@ -625,6 +625,13 @@ select {
   align-items: center;
   gap: 14px;
 }
+.export-bar {
+  flex-wrap: wrap;
+}
+.export-actions {
+  flex-wrap: wrap;
+}
+#export-destination { overflow-wrap:anywhere; max-width:560px; }
 .export-bar h2 {
   font-size: 14px;
   font-weight: 650;
@@ -1025,6 +1032,12 @@ dialog p {
   }
   .export-bar {
     padding: 17px;
+    flex-wrap: wrap;
+  }
+  .export-bar {
+    flex-wrap: wrap;
+  }
+  .export-actions {
     flex-wrap: wrap;
   }
   .export-bar h2 {

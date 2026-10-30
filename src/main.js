@@ -1,6 +1,15 @@
 import "./styles.css";
 import { zipSync } from "fflate";
 import {
+  initExportDestination,
+  resolveExportConflict,
+} from "./export-destination.js";
+import {
+  exportFolderName,
+  pieceFilename,
+  saveBrowserFolder,
+} from "./export-files.js";
+import {
   defaults,
   MAX_PHOTOS,
   WIDTH,
@@ -45,6 +54,7 @@ let publicationStore,
   saveError,
   legacyDraft;
 fillIcons();
+const exportDestination = initExportDestination({ notice });
 const descriptions = initDescriptions({
   getProperty: () => state.settings,
   onChange: () => changed(),
@@ -410,11 +420,17 @@ function render() {
     : "1 portada + 9 fotografías";
   $("#download-one").disabled = !photo || !fontsReady;
   $("#export-all").disabled = !state.photos.length || !fontsReady;
+  $("#export-folder").hidden =
+    !window.piezasDesktop?.savePieces &&
+    typeof window.showDirectoryPicker !== "function";
+  $("#configure-export").hidden = $("#export-folder").hidden;
+  $("#export-destination").hidden = $("#export-folder").hidden;
+  $("#export-folder").disabled = !state.photos.length || !fontsReady;
   $("#export-all>span").textContent = state.photos.length
     ? `Descargar ${state.photos.length} ${state.photos.length === 1 ? "pieza" : "piezas"}`
     : "Descargar carrusel";
   $("#export-help").textContent = state.photos.length
-    ? `PNG en alta resolución · ${state.photos.length} ${state.photos.length === 1 ? "pieza" : "piezas"} en un archivo ZIP${state.photos.length < 10 ? ` · Añade ${10 - state.photos.length} fotos para completar 10` : ""}`
+    ? `PNG en alta resolución · ${state.photos.length} ${state.photos.length === 1 ? "pieza" : "piezas"} numeradas en orden${state.photos.length < 10 ? ` · Añade ${10 - state.photos.length} fotos para completar 10` : ""}`
     : "Carga 10 fotos para crear tu portada y 9 piezas con tu logo.";
   const filmstrip = $("#filmstrip");
   if (!filmstrip.children.length) {
@@ -671,41 +687,90 @@ $("#download-one").addEventListener("click", () =>
     canvas.width = WIDTH;
     canvas.height = HEIGHT;
     renderPiece(canvas, state, selected);
-    download(
-      await canvasBlob(canvas),
-      `${safeFilename(state.settings.reference)}-${String(selected + 1).padStart(2, "0")}.png`,
-    );
+    download(await canvasBlob(canvas), pieceFilename(selected));
     notice("Pieza descargada en 1080 × 1350 px.");
   }),
 );
+async function renderExportImages() {
+  exportFolderName(activeCode);
+  await loadPieceFonts();
+  if (!state.photos.length) throw new Error("Carga tus fotografías primero.");
+  const images = [],
+    canvas = document.createElement("canvas");
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  for (let i = 0; i < state.photos.length; i++) {
+    notice(`Generando pieza ${i + 1} de ${state.photos.length}…`, false, true);
+    renderPiece(canvas, state, i);
+    images.push(new Uint8Array(await (await canvasBlob(canvas)).arrayBuffer()));
+    await new Promise((resolve) => setTimeout(resolve, 0));
+  }
+  return images;
+}
 $("#export-all").addEventListener("click", () =>
   task("Preparando tu carrusel…", async () => {
-    publicationZipName(activeCode);
-    await loadPieceFonts();
-    if (!state.photos.length) throw new Error("Carga tus fotografías primero.");
-    const files = {},
-      canvas = document.createElement("canvas");
-    canvas.width = WIDTH;
-    canvas.height = HEIGHT;
-    for (let i = 0; i < state.photos.length; i++) {
-      notice(
-        `Generando pieza ${i + 1} de ${state.photos.length}…`,
-        false,
-        true,
-      );
-      renderPiece(canvas, state, i);
-      files[
-        `${String(i + 1).padStart(2, "0")}-${i === 0 ? "portada" : "foto"}.png`
-      ] = new Uint8Array(await (await canvasBlob(canvas)).arrayBuffer());
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    }
+    const images = await renderExportImages();
+    const files = Object.fromEntries(
+      images.map((bytes, i) => [`${activeCode}/${pieceFilename(i)}`, bytes]),
+    );
     download(
       new Blob([zipSync(files, { level: 0 })], { type: "application/zip" }),
       publicationZipName(activeCode),
     );
     notice(
-      `Listo: ${state.photos.length} piezas exportadas en 1080 × 1350 px.`,
+      `Listo: ${images.length} piezas numeradas dentro de la carpeta ${activeCode} del ZIP.`,
     );
+  }),
+);
+$("#export-folder").addEventListener("click", () =>
+  task("Preparando la carpeta de imágenes…", async () => {
+    exportFolderName(activeCode);
+    let parent;
+    if (!window.piezasDesktop?.savePieces) {
+      try {
+        parent = await exportDestination.prepare();
+      } catch (error) {
+        if (error.name === "AbortError") {
+          notice("Exportación cancelada.");
+          return;
+        }
+        throw error;
+      }
+    }
+    const images = await renderExportImages();
+    if (window.piezasDesktop?.savePieces) {
+      const result = await window.piezasDesktop.savePieces({
+        code: activeCode,
+        images,
+      });
+      if (result.canceled) {
+        notice("Exportación cancelada.");
+        return;
+      }
+      if (result.error) throw new Error(result.error);
+      exportDestination.show(result.destination);
+      notice(
+        `Listo: ${images.length} imágenes guardadas en ${result.folder}.${result.backup ? ` Respaldo anterior: ${result.backup}.` : ""}`,
+        false,
+        true,
+      );
+    } else {
+      const result = await saveBrowserFolder(
+        parent,
+        activeCode,
+        images,
+        resolveExportConflict,
+      );
+      if (result.canceled) {
+        notice("Exportación cancelada.");
+        return;
+      }
+      notice(
+        `Listo: carpeta ${result.folder} creada con ${images.length} imágenes numeradas.${result.backup ? ` Respaldo anterior: ${result.backup}.` : ""}`,
+        false,
+        true,
+      );
+    }
   }),
 );
 

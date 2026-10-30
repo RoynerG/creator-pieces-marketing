@@ -2,9 +2,11 @@ import { app, BrowserWindow, ipcMain, dialog, shell, Menu } from "electron";
 import updater from "electron-updater";
 import path from "node:path";
 import { mkdirSync } from "node:fs";
+import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { startDesktopServer } from "../server/desktop-server.js";
 import { dataDirectory } from "../server/data-path.js";
+import { savePieceFolder, validatePieceExport } from "./export-folder.js";
 const { autoUpdater } = updater;
 const directory = dataDirectory();
 mkdirSync(directory, { recursive: true });
@@ -112,6 +114,64 @@ else {
         return result.canceled ? null : result.filePaths[0];
       });
       handle("piezas:open-data", () => shell.openPath(directory));
+      const exportConfig = path.join(directory, ".local", "export-folder.json");
+      async function getExportDestination() {
+        try {
+          const { folder } = JSON.parse(await readFile(exportConfig, "utf8"));
+          if (
+            typeof folder === "string" &&
+            path.isAbsolute(folder) &&
+            (await stat(folder)).isDirectory()
+          )
+            return folder;
+        } catch {}
+        return null;
+      }
+      async function chooseExportDestination() {
+        const result = await dialog.showOpenDialog(window, {
+          title: "Elige dónde guardar las carpetas de tus inmuebles",
+          defaultPath:
+            (await getExportDestination()) || app.getPath("pictures"),
+          properties: ["openDirectory", "createDirectory"],
+          buttonLabel: "Usar esta ubicación",
+        });
+        if (result.canceled) return null;
+        const folder = result.filePaths[0];
+        await mkdir(path.dirname(exportConfig), { recursive: true });
+        await writeFile(exportConfig, JSON.stringify({ folder }));
+        return folder;
+      }
+      handle("piezas:export-destination", getExportDestination);
+      handle("piezas:choose-export-destination", chooseExportDestination);
+      handle("piezas:save-pieces", async (input) => {
+        try {
+          const pieces = validatePieceExport(input);
+          const parent =
+            (await getExportDestination()) || (await chooseExportDestination());
+          if (!parent) return { canceled: true };
+          const result = await savePieceFolder(parent, pieces, async (code) => {
+            const answer = await dialog.showMessageBox(window, {
+              type: "question",
+              title: "Esta carpeta ya existe",
+              message: `Ya existe ${path.join(parent, code)}.`,
+              detail: `Reemplazar crea la carpeta ${code} con las nuevas imágenes y conserva la anterior como respaldo. Guardar otra copia crea ${code} (2), (3), etc.`,
+              buttons: [
+                "Reemplazar y respaldar",
+                "Guardar otra copia",
+                "Cancelar",
+              ],
+              defaultId: 2,
+              cancelId: 2,
+              noLink: true,
+            });
+            return ["replace", "copy", "cancel"][answer.response];
+          });
+          if (!result.canceled) await shell.openPath(result.folder);
+          return { ...result, destination: parent };
+        } catch (error) {
+          return { error: error.message };
+        }
+      });
       handle("piezas:install-update", async () => {
         if (!updateReady)
           return { error: "Todavía no hay una actualización descargada." };

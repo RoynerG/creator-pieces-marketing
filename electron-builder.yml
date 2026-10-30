@@ -10,6 +10,7 @@ files:
   - src/model.js
   - src/caption-model.js
   - src/publications-store.js
+  - src/export-files.js
   - package.json
 asar: true
 npmRebuild: false

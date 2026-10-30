@@ -451,12 +451,33 @@
                 <p id="export-help">
                   Carga tus fotos y descarga el carrusel completo.
                 </p>
+                <p id="export-destination" hidden>
+                  Destino: elige una ubicación al guardar.
+                </p>
               </div>
             </div>
-            <button class="button yellow" id="export-all" type="button">
-              <i data-icon="download"></i><span>Descargar carrusel</span
-              ><span class="button-tag">ZIP</span>
-            </button>
+            <div class="export-actions">
+              <button
+                class="button outline"
+                id="configure-export"
+                type="button"
+                hidden
+              >
+                Ubicación de guardado
+              </button>
+              <button
+                class="button yellow"
+                id="export-folder"
+                type="button"
+                hidden
+              >
+                Guardar en carpeta
+              </button>
+              <button class="button yellow" id="export-all" type="button">
+                <i data-icon="download"></i><span>Descargar carrusel</span
+                ><span class="button-tag">ZIP</span>
+              </button>
+            </div>
           </section>
         </div>
         <section
@@ -742,6 +763,28 @@
           Añadir fotos seleccionadas
         </button>
       </div>
+    </dialog>
+    <dialog id="export-conflict-dialog" aria-labelledby="export-conflict-title">
+      <form method="dialog">
+        <h2 id="export-conflict-title">Esta carpeta ya existe</h2>
+        <p id="export-conflict-description"></p>
+        <p>
+          Reemplazar guarda las nuevas imágenes y conserva la carpeta anterior
+          como respaldo. Guardar otra copia crea una carpeta con un número
+          adicional.
+        </p>
+        <div class="dialog-actions">
+          <button class="button outline" value="cancel" autofocus>
+            Cancelar
+          </button>
+          <button class="button outline" value="copy">
+            Guardar otra copia
+          </button>
+          <button class="button navy" value="replace">
+            Reemplazar y respaldar
+          </button>
+        </div>
+      </form>
     </dialog>
     <dialog id="confirm-dialog">
       <form method="dialog">
