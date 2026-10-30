@@ -14,30 +14,236 @@
   <body>
     <a class="skip-link" href="#editor">Ir al editor</a>
     <header class="app-header">
-      <a class="brand" href="./" aria-label="Piezas, inicio"
+      <a
+        class="brand"
+        href="#inicio"
+        data-route="inicio"
+        aria-label="Piezas, inicio"
         ><span class="brand-symbol">p<span>.</span></span
         ><span
           >piezas<span class="brand-sub">ESTUDIO INMOBILIARIO</span></span
         ></a
       >
-      <div class="header-center">
-        <span class="local-dot"></span> Tu estudio, en tu equipo
-      </div>
+      <nav class="main-nav" aria-label="Menú principal">
+        <button class="button quiet" data-route="inicio" aria-current="page">
+          <i data-icon="home"></i> Inicio
+        </button>
+        <button class="button quiet" data-route="publicaciones">
+          <i data-icon="layers"></i> Publicaciones
+        </button>
+        <button class="button quiet" data-route="configuracion">
+          <i data-icon="settings"></i> Configuración
+        </button>
+      </nav>
       <div class="header-actions">
         <button class="button quiet" id="new-project" type="button">
           Nueva publicación</button
-        ><button class="button outline" id="save-project" type="button">
+        ><button class="button outline" id="save-project" type="button" hidden>
           <i data-icon="save"></i> Guardar proyecto
         </button>
       </div>
     </header>
     <main id="editor">
-      <section id="publications-home" aria-label="Publicaciones">
+      <section id="app-home" aria-label="Inicio">
+        <div class="home-intro">
+          <div class="eyebrow">TU ESTUDIO INMOBILIARIO</div>
+          <h1>¿Qué quieres crear hoy?</h1>
+          <p>
+            Todo lo que necesitas para preparar tu próxima publicación, en un
+            solo lugar.
+          </p>
+        </div>
+        <div class="launch-grid">
+          <button type="button" class="launch-card primary" data-action="new">
+            <span class="launch-icon"><i data-icon="plus"></i></span
+            ><strong>Nueva publicación</strong
+            ><small
+              >Empieza con el código del inmueble. Añade sus fotos y
+              datos.</small
+            ><i data-icon="arrow"></i>
+          </button>
+          <button type="button" class="launch-card" data-route="publicaciones">
+            <span class="launch-icon"><i data-icon="layers"></i></span
+            ><strong>Mis publicaciones</strong
+            ><small
+              >Continúa donde lo dejaste. Todas tus publicaciones por
+              código.</small
+            ><i data-icon="arrow"></i>
+          </button>
+          <button type="button" class="launch-card" data-route="fotos">
+            <span class="launch-icon"><i data-icon="folder"></i></span
+            ><strong>Fotos por inmueble</strong
+            ><small
+              >Explora tu carpeta de fotos y selecciona las imágenes.</small
+            ><i data-icon="arrow"></i>
+          </button>
+          <button
+            type="button"
+            class="launch-card"
+            data-route="publicaciones"
+            data-intent="description"
+          >
+            <span class="launch-icon"><i data-icon="spark"></i></span
+            ><strong>Descripciones</strong
+            ><small
+              >Redacta y mejora el texto de cada inmueble con MiniMax.</small
+            ><i data-icon="arrow"></i>
+          </button>
+          <button type="button" class="launch-card" data-action="import">
+            <span class="launch-icon"><i data-icon="upload"></i></span
+            ><strong>Abrir proyecto</strong
+            ><small
+              >Recupera un archivo .piezas guardado en este u otro
+              equipo.</small
+            ><i data-icon="arrow"></i>
+          </button>
+          <button type="button" class="launch-card" data-route="configuracion">
+            <span class="launch-icon"><i data-icon="settings"></i></span
+            ><strong>Configuración</strong
+            ><small
+              >Carpetas, MiniMax, exportación, datos y actualizaciones.</small
+            ><i data-icon="arrow"></i>
+          </button>
+        </div>
+        <p class="home-note">
+          <i data-icon="lock"></i> Tus publicaciones se guardan en este equipo.
+          Puedes llevarlas a otro con un archivo .piezas.
+        </p>
+      </section>
+      <section id="settings-home" aria-label="Configuración" hidden>
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">A TU MANERA</div>
+            <h1>Configuración</h1>
+            <p>Los ajustes de tu estudio, reunidos en un solo lugar.</p>
+          </div>
+        </div>
+        <div class="settings-grid">
+          <section class="settings-card">
+            <h2><i data-icon="folder"></i> Carpeta de fotos</h2>
+            <p>
+              Elige la carpeta que contiene los inmuebles organizados por
+              código. En otro equipo, configura su ruta local.
+            </p>
+            <details id="library-settings" open>
+              <summary>Cambiar carpeta de origen</summary>
+              <form id="library-form">
+                <label for="library-path">Ruta de la carpeta Fotos</label>
+                <div class="library-path-row">
+                  <input
+                    id="library-path"
+                    placeholder="C:\Usuarios\TuUsuario\Fotos"
+                  /><button
+                    id="choose-library-folder"
+                    class="button outline"
+                    type="button"
+                    hidden
+                  >
+                    Elegir carpeta</button
+                  ><button class="button navy" type="submit">
+                    Conectar carpeta
+                  </button>
+                </div>
+              </form>
+            </details>
+            <p id="library-config-status" class="helper" role="status"></p>
+          </section>
+          <section class="settings-card">
+            <h2><i data-icon="download"></i> Guardado de imágenes</h2>
+            <p id="settings-export-destination">
+              Destino: elige una ubicación al guardar.
+            </p>
+            <button id="configure-export" class="button outline" type="button">
+              Elegir ubicación de guardado
+            </button>
+            <p class="helper">
+              Cada inmueble se guarda en una carpeta con su código, con imágenes
+              1.png, 2.png… Si ya existe, podrás reemplazarla con respaldo o
+              crear una copia.
+            </p>
+          </section>
+          <section class="settings-card">
+            <h2><i data-icon="spark"></i> MiniMax y descripciones</h2>
+            <p id="settings-ai-status" role="status">
+              Consultando configuración…
+            </p>
+            <button
+              id="settings-configure-ai"
+              class="button outline"
+              type="button"
+            >
+              Configurar clave y modelo
+            </button>
+            <p class="helper">
+              Elige el modelo y cómo recordar tu clave en este equipo.
+            </p>
+          </section>
+          <section class="settings-card">
+            <h2><i data-icon="edit"></i> Marca y contacto</h2>
+            <p>
+              El logo, los colores y los datos de contacto se ajustan dentro de
+              cada publicación.
+            </p>
+            <button class="button outline" data-route="publicaciones">
+              Elegir publicación
+            </button>
+            <p class="helper">
+              Encontrarás el logo y los colores en Crear piezas → Marca, y el
+              contacto en Crear descripción.
+            </p>
+          </section>
+          <section class="settings-card">
+            <h2><i data-icon="save"></i> Proyectos y datos</h2>
+            <p>
+              Las publicaciones se guardan automáticamente en este equipo. Para
+              llevar una a otro PC, ábrela y pulsa Guardar proyecto.
+            </p>
+            <button class="button outline" data-action="import">
+              Abrir archivo .piezas</button
+            ><button
+              class="button outline"
+              data-proxy="open-data-folder"
+              data-desktop-only
+              hidden
+            >
+              Abrir carpeta de datos
+            </button>
+          </section>
+          <section class="settings-card">
+            <h2><i data-icon="download"></i> Aplicación y actualizaciones</h2>
+            <p id="settings-version">Versión de navegador · Servidor local</p>
+            <p id="settings-update-message">
+              En la aplicación instalada de Windows puedes buscar e instalar
+              actualizaciones.
+            </p>
+            <button
+              id="settings-check-updates"
+              class="button outline"
+              data-proxy="check-updates"
+              data-desktop-only
+              hidden
+            >
+              Buscar actualizaciones</button
+            ><button
+              id="settings-install-update"
+              class="button navy"
+              data-proxy="install-update"
+              hidden
+            >
+              Reiniciar y actualizar
+            </button>
+          </section>
+        </div>
+      </section>
+
+      <section id="publications-home" aria-label="Publicaciones" hidden>
         <div class="page-heading">
           <div>
             <div class="eyebrow">TU ESTUDIO INMOBILIARIO</div>
             <h1>Un código. Una publicación.</h1>
-            <p>Encuentra cada inmueble con sus fotos, piezas y descripción.</p>
+            <p id="publication-purpose">
+              Encuentra cada inmueble con sus fotos, piezas y descripción.
+            </p>
           </div>
         </div>
         <div class="publications-heading">
@@ -57,6 +263,15 @@
         <button id="resume-draft" type="button" class="button outline" hidden>
           Guardar borrador anterior por código
         </button>
+      </section>
+      <section id="photos-home" aria-label="Fotos por inmueble" hidden>
+        <div class="page-heading">
+          <div>
+            <div class="eyebrow">TU BIBLIOTECA</div>
+            <h1>Fotos por inmueble</h1>
+            <p>Elige una carpeta para añadir sus fotos a la publicación.</p>
+          </div>
+        </div>
         <section class="library-panel" aria-label="Carpeta local de fotos">
           <div class="publications-heading">
             <div>
@@ -67,28 +282,23 @@
               Actualizar carpetas
             </button>
           </div>
-          <details id="library-settings">
-            <summary>Cambiar carpeta de origen</summary>
-            <form id="library-form">
-              <label for="library-path">Ruta de la carpeta Fotos</label>
-              <div class="library-path-row">
-                <input
-                  id="library-path"
-                  placeholder="C:\Usuarios\TuUsuario\Fotos"
-                /><button
-                  id="choose-library-folder"
-                  class="button outline"
-                  type="button"
-                  hidden
-                >
-                  Elegir carpeta</button
-                ><button class="button navy" type="submit">
-                  Conectar carpeta
-                </button>
-              </div>
-            </form>
-          </details>
+          <div class="library-tools">
+            <label class="sr-only" for="folder-search"
+              >Buscar carpeta por código</label
+            >
+            <input
+              id="folder-search"
+              type="search"
+              placeholder="Buscar carpeta por código"
+            />
+            <button class="button outline" data-route="configuracion">
+              Configurar carpeta de fotos
+            </button>
+          </div>
           <p id="library-status" class="helper" role="status"></p>
+          <p id="folder-empty" class="helper" hidden>
+            No hay carpetas que coincidan. Revisa la ruta en Configuración.
+          </p>
           <div id="library-folders" class="folder-grid"></div>
         </section>
       </section>
@@ -459,9 +669,8 @@
             <div class="export-actions">
               <button
                 class="button outline"
-                id="configure-export"
+                data-route="configuracion"
                 type="button"
-                hidden
               >
                 Ubicación de guardado
               </button>

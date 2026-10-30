@@ -1,4 +1,7 @@
 const paths = {
+  home: '<path d="m3 10 9-7 9 7v11h-6v-7H9v7H3Z"/>',
+  plus: '<path d="M12 4v16M4 12h16"/>',
+  folder: '<path d="M3 7V4h6l3 3h9v13H3Z"/>',
   settings:
     '<path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8ZM12 2v3m0 14v3M2 12h3m14 0h3M5 5l2 2m10 10 2 2M5 19l2-2M17 7l2-2"/>',
   copy: '<rect x="8" y="8" width="12" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/>',

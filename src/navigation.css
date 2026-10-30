@@ -1,0 +1,208 @@
+.main-nav {
+  display: flex;
+  gap: 6px;
+}
+.main-nav .button {
+  color: #52637b;
+  border: 1px solid transparent;
+}
+.main-nav [aria-current="page"] {
+  background: #edf1f7;
+  color: #071d3f;
+  border-color: #dbe2ec;
+}
+.home-intro {
+  padding: 38px 0 30px;
+  max-width: 780px;
+}
+.home-intro h1 {
+  font-size: clamp(30px, 4vw, 44px);
+  letter-spacing: -1.5px;
+  line-height: 1.2;
+  margin: 10px 0 14px;
+  color: #071d3f;
+}
+.home-intro p {
+  font-size: 16px;
+  color: #52637b;
+}
+.launch-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+.launch-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  gap: 12px;
+  min-height: 206px;
+  padding: 26px;
+  background: #fff;
+  color: #071d3f;
+  border: 1px solid #dbe2ec;
+  border-radius: 16px;
+}
+.launch-card:hover {
+  border-color: #9aaac0;
+  box-shadow: 0 5px 18px #071d3f08;
+}
+.launch-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #f0f3f8;
+}
+.launch-card strong {
+  font-size: 21px;
+  letter-spacing: -0.4px;
+}
+.launch-card small {
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.6;
+  color: #52637b;
+  padding-right: 15px;
+  max-width: 310px;
+}
+.launch-card > .icon {
+  position: absolute;
+  right: 24px;
+  top: 38px;
+}
+.launch-card.primary {
+  background: #071d3f;
+  border-color: #071d3f;
+  color: white;
+}
+.launch-card.primary .launch-icon {
+  background: #ffcc00;
+  color: #071d3f;
+}
+.launch-card.primary small {
+  color: #d2dcec;
+}
+.home-note {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 26px 0 12px;
+  color: #52637b;
+}
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.settings-card {
+  padding: 26px;
+  border: 1px solid #dbe2ec;
+  background: white;
+  border-radius: 14px;
+  min-width: 0;
+}
+.settings-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 19px;
+  margin-bottom: 12px;
+}
+.settings-card p {
+  color: #52637b;
+  margin-bottom: 16px;
+  overflow-wrap: anywhere;
+}
+.settings-card .library-path-row {
+  flex-wrap: wrap;
+}
+.settings-card .library-path-row input {
+  flex-basis: 100%;
+  width: 100%;
+}
+.settings-card details {
+  margin: 0;
+}
+.settings-card summary {
+  margin: 12px 0;
+  cursor: pointer;
+}
+.settings-card .button {
+  margin: 3px 6px 3px 0;
+}
+.settings-card .helper {
+  margin: 12px 0 0;
+}
+#photos-home .library-panel {
+  border: 0;
+  margin: 0;
+  padding-top: 0;
+}
+.library-tools {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 16px 0;
+}
+.library-tools input {
+  max-width: 300px;
+}
+#folder-empty {
+  padding: 20px 0;
+}
+@media (max-width: 1100px) {
+  .app-header {
+    height: auto;
+    min-height: 89px;
+    flex-wrap: wrap;
+    padding-top: 16px;
+    padding-bottom: 16px;
+    gap: 14px;
+  }
+  .main-nav {
+    order: 3;
+    flex-basis: 100%;
+  }
+}
+@media (max-width: 800px) {
+  .launch-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .settings-grid {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 520px) {
+  .launch-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .launch-card {
+    min-height: 170px;
+    padding: 22px;
+  }
+  .main-nav {
+    justify-content: space-between;
+  }
+  .main-nav .button {
+    padding: 9px;
+    font-size: 13px;
+  }
+  .main-nav .icon {
+    display: none;
+  }
+  .header-actions {
+    margin-left: auto;
+  }
+  .header-actions #new-project {
+    display: none;
+  }
+  .settings-card {
+    padding: 20px;
+  }
+}

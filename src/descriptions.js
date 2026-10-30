@@ -95,6 +95,7 @@ export function initDescriptions({ getProperty, onChange, notice }) {
       : config.configured
         ? `MiniMax configurado · ${config.model}`
         : "Añade tu clave de MiniMax para empezar";
+    $("#settings-ai-status").textContent = $("#ai-connection").textContent;
     $("#ai-connection").classList.toggle(
       "connected",
       available && config.configured,

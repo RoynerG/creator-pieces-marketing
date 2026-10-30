@@ -2,12 +2,23 @@ export function initDesktop({ flush, notice }) {
   const desktop = window.piezasDesktop;
   if (!desktop) return;
   document.body.classList.add("desktop-app");
+  document.querySelectorAll("[data-desktop-only]").forEach((element) => {
+    element.hidden = false;
+  });
   const bar = document.querySelector("#desktop-status"),
     message = document.querySelector("#desktop-update-message"),
     install = document.querySelector("#install-update");
   bar.hidden = false;
   const show = (state) => {
     message.textContent = state.message;
+    document.querySelector("#settings-update-message").textContent =
+      state.message;
+    document.querySelector("#settings-install-update").hidden =
+      state.status !== "ready";
+    document.querySelector("#settings-check-updates").disabled = [
+      "checking",
+      "downloading",
+    ].includes(state.status);
     install.hidden = state.status !== "ready";
     document.querySelector("#check-updates").disabled = [
       "checking",
@@ -17,6 +28,8 @@ export function initDesktop({ flush, notice }) {
   desktop.info().then((info) => {
     document.querySelector("#desktop-version").textContent =
       `Piezas ${info.version} · SQLite`;
+    document.querySelector("#settings-version").textContent =
+      `Piezas ${info.version} · Windows`;
     show(info.update);
   });
   desktop.onUpdate(show);

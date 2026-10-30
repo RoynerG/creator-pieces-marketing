@@ -29,6 +29,7 @@ import {
 } from "./publications-store.js";
 import { initPublications } from "./publications.js";
 import { initDesktop } from "./desktop.js";
+import { initNavigation } from "./navigation.js";
 import { icon, fillIcons } from "./icons.js";
 
 const $ = (selector) => document.querySelector(selector);
@@ -65,17 +66,33 @@ const publications = initPublications({
   getActive: () => activeCode,
   getPhotoCount: () => state.photos.length,
   open: openPublication,
-  home: async () => {
-    if (busy) return false;
-    descriptions.set(descriptions.get());
-    await flushPublication();
-    return true;
-  },
+  home: () => navigation.go("publicaciones"),
+  onEditor: () => navigation.editor(),
   importPhotos: async (files) => {
     await addPhotos(files);
   },
   notice,
 });
+
+const navigation = initNavigation({
+  beforeLeave: async () => {
+    if (busy || descriptions.isBusy()) {
+      notice("Espera a que termine la operación antes de cambiar de sección.");
+      return false;
+    }
+    descriptions.set(descriptions.get());
+    await flushPublication();
+    return true;
+  },
+  refresh: () => publications.refresh(),
+  create: () => publications.showNew(),
+  openProject: () => $("#open-project").click(),
+  configureAI: () => $("#configure-ai").click(),
+  showDescription: (value) => descriptions.show(value),
+  hasPublication: () => !!activeCode,
+  notice,
+});
+navigation.start();
 
 initDesktop({
   notice,

@@ -6,6 +6,8 @@ export function initExportDestination({ notice }) {
     label.textContent = value
       ? `Guardar carpetas en: ${value}`
       : "Destino: elige una ubicación al guardar.";
+    document.querySelector("#settings-export-destination").textContent =
+      label.textContent;
   };
   const ready = (async () => {
     try {

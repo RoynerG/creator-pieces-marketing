@@ -29,9 +29,13 @@ Se abre en `http://127.0.0.1:5173`. Mantén el servidor abierto. La versión ins
 
 Después de instalar, el editor de imágenes funciona sin Internet ni servicios de pago. MiniMax requiere Internet y una clave Coding Plan. Las fuentes vienen incluidas.
 
+## Inicio y configuración
+
+**Configuración** reúne la carpeta de fotos, el destino de exportación, la clave y el modelo de MiniMax, los proyectos y las actualizaciones de Windows. Los ajustes de logo, colores y contacto siguen siendo propios de cada publicación y tienen un acceso desde esta pantalla. Cambiar de sección espera a que se guarden las ediciones pendientes.
+
 ## Publicaciones por código y carpeta de fotos
 
-La pantalla inicial muestra **Mis publicaciones** y **Tu carpeta de fotos**. Cada código reúne sus datos, fotografías, logo, ficha y descripción. Puedes buscar por código o ubicación.
+La pantalla **Inicio** ofrece seis accesos grandes: **Nueva publicación**, **Mis publicaciones**, **Fotos por inmueble**, **Descripciones**, **Abrir proyecto** y **Configuración**. El menú superior permite volver a Inicio, Publicaciones o Configuración desde cualquier sección. **Descripciones** permite elegir un inmueble y abrir directamente su texto. Cada código reúne sus datos, fotografías, logo, ficha y descripción. Puedes buscar por código o ubicación.
 
 - **Nueva publicación** pide el código (por ejemplo, `12238`). Si ya existe, abre esa publicación sin vaciarla. Las publicaciones nuevas conservan la marca y el contacto, y empiezan con fotos, ficha y datos del inmueble vacíos.
 - **Publicaciones** guarda el trabajo antes de volver al listado. El código identifica la publicación y no se cambia desde el editor.
@@ -63,7 +67,7 @@ Las fuentes se distribuyen localmente con los paquetes Fontsource y se incluyen 
 
 ## Generar descripciones con MiniMax
 
-1. Abre **Crear descripción → Configurar MiniMax**. Introduce tu clave de suscripción **Coding Plan** (prefijo `sk-cp`) y elige un modelo incluido en tu plan. Puedes elegir `MiniMax-M3.1-Flash`, `MiniMax-M3`, `MiniMax-M2.7` o `MiniMax-M2.5`. Las configuraciones nuevas usan M3.1 Flash; una elección guardada se conserva. El acceso a cada modelo depende de tu suscripción.
+1. Abre **Configuración → Configurar clave y modelo** (también disponible desde **Crear descripción → Configurar MiniMax**). Introduce tu clave de suscripción **Coding Plan** (prefijo `sk-cp`) y elige un modelo incluido en tu plan. Puedes elegir `MiniMax-M3.1-Flash`, `MiniMax-M3`, `MiniMax-M2.7` o `MiniMax-M2.5`. Las configuraciones nuevas usan M3.1 Flash; una elección guardada se conserva. El acceso a cada modelo depende de tu suscripción.
 2. La clave queda en la memoria del servidor. Opcionalmente, **Recordar la clave en este equipo** la guarda sin cifrar en `%APPDATA%\Piezas Estudio\.local\minimax.json`, fuera de Git y bloqueado en el servidor web. **Olvidar clave** elimina ambos. Nunca se devuelve al navegador ni se incluye en proyectos exportados. Configúrala por separado en cada PC.
 3. Dentro de la publicación, pega la ficha completa: descripción, especificaciones y características. Revisa ciudad, teléfono y marca. El negocio se toma de los datos del inmueble. **Usar datos de las piezas** inicia una ficha cuando el campo está vacío.
 4. Pulsa **Generar descripción**. La tarjeta presenta título, párrafo, características con emojis, amenidades, código, teléfono y hashtags, **sin enlaces web**. Si el código de la ficha no coincide con el de la publicación, la app pide corregirlo antes de enviar la solicitud. Los enlaces de descripciones antiguas también se retiran al abrirlas.

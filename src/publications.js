@@ -6,6 +6,7 @@ export function initPublications({
   getPhotoCount,
   open,
   home,
+  onEditor,
   importPhotos,
   notice,
 }) {
@@ -38,6 +39,7 @@ export function initPublications({
     return data;
   }
   function showEditor() {
+    onEditor();
     $("#publications-home").hidden = true;
     $("#publication-editor").hidden = false;
     $("#save-project").disabled = false;
@@ -94,9 +96,12 @@ export function initPublications({
       $("#publication-list").append(button);
     }
     $("#library-folders").replaceChildren();
-    for (const code of folders.filter((code) =>
-      code.toLowerCase().includes(query),
-    )) {
+    const folderQuery = $("#folder-search").value.trim().toLowerCase();
+    const folderMatches = folders.filter((code) =>
+      code.toLowerCase().includes(folderQuery),
+    );
+    $("#folder-empty").hidden = folderMatches.length > 0;
+    for (const code of folderMatches) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "folder-button";
@@ -131,6 +136,8 @@ export function initPublications({
       $("#library-status").textContent = error.message;
       $("#library-settings").open = true;
     } finally {
+      $("#library-config-status").textContent =
+        $("#library-status").textContent;
       $("#refresh-library").disabled = false;
       render();
     }
@@ -147,6 +154,7 @@ export function initPublications({
     await refreshFolders();
   }
   $("#publication-search").addEventListener("input", render);
+  $("#folder-search").addEventListener("input", render);
   $("#refresh-library").addEventListener("click", refreshFolders);
   $("#library-form").addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -155,9 +163,10 @@ export function initPublications({
     try {
       await api("config", { directory: $("#library-path").value });
       await refreshFolders();
-      $("#library-settings").open = false;
+      notice("Carpeta de fotos configurada.");
     } catch (error) {
       $("#library-status").textContent = error.message;
+      $("#library-config-status").textContent = error.message;
     } finally {
       button.disabled = false;
     }
@@ -195,11 +204,7 @@ export function initPublications({
   });
   $("#back-publications").addEventListener("click", async () => {
     try {
-      if (!(await home())) return;
-      $("#publication-editor").hidden = true;
-      $("#publications-home").hidden = false;
-      $("#save-project").disabled = true;
-      await refresh();
+      await home();
     } catch (error) {
       notice(error.message, true);
     }
@@ -257,7 +262,7 @@ export function initPublications({
       updateSelection();
     } catch (error) {
       $("#photo-library-status").textContent =
-        `${error.message} Puedes cambiar la ruta desde Publicaciones o cargar archivos manualmente.`;
+        `${error.message} Puedes cambiar la ruta desde Configuración o cargar archivos manualmente.`;
     }
   }
   $("#browse-property-photos").addEventListener("click", browsePhotos);
@@ -294,5 +299,5 @@ export function initPublications({
       updateSelection();
     }
   });
-  return { refresh, showEditor };
+  return { refresh, showEditor, showNew };
 }
