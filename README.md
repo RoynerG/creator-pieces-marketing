@@ -1,6 +1,6 @@
 # Piezas · Estudio inmobiliario
 
-App local en español para convertir diez fotos de un inmueble en un carrusel de **1080 × 1350 px**: una portada con datos y nueve fotografías con tu logo. Basada en las referencias del inmueble #12238.
+App local en español para convertir diez fotos de un inmueble en una portada de **1080 × 1350 px** con datos y nueve fotografías con tu logo, cada una con su propia proporción. Basada en las referencias del inmueble #12238.
 
 ## Instalar en Windows (recomendado)
 
@@ -48,9 +48,9 @@ La pantalla **Inicio** ofrece seis accesos grandes: **Nueva publicación**, **Mi
 
 1. Crea o abre una publicación por código. Completa negocio (venta/arriendo), tipo de inmueble, ubicación, habitaciones, baños y área. Deja un dato numérico vacío para ocultarlo en la portada.
 2. En **Fotografías**, carga hasta 10 archivos JPG, PNG o WebP (25 MB por archivo). La primera foto es la portada. Para obtener diez piezas, carga diez fotos.
-3. Usa las flechas para ordenar y las miniaturas para revisar. Todas las fotos se muestran completas, sin zoom ni recortes, conservando su proporción. Si sobra espacio, se rellena con el color principal de la marca.
+3. Usa las flechas para ordenar y las miniaturas para revisar. Todas las fotos se muestran completas, sin zoom ni recortes, conservando su proporción. Las fotografías interiores conservan su proporción y llevan el logo superpuesto, sin franjas de relleno. La portada conserva su plantilla vertical.
 4. En **Tu marca**, carga el logo y ajusta colores, tamaño y posición. En la portada el logo se mantiene en la franja derecha, con un tamaño máximo de 170 px; en las fotos puede ir a izquierda o derecha.
-5. Pulsa **Descargar 10 piezas**. Obtendrás un ZIP llamado solo con el código, por ejemplo **`12238.zip`**, con una carpeta **12238** y, dentro, `1.png`, `2.png`… `10.png`, en el orden de la vista previa. También puedes descargar una pieza individual. Con menos fotos se exportan solo las piezas completas, sin duplicar ni inventar fotografías.
+5. Los botones **Ubicación de guardado**, **Guardar en carpeta** y **Descargar 10 piezas** están arriba del editor. Pulsa **Descargar 10 piezas**. Obtendrás un ZIP llamado solo con el código, por ejemplo **`12238.zip`**, con una carpeta **12238** y, dentro, `1.png`, `2.png`… `10.png`, en el orden de la vista previa. También puedes descargar una pieza individual. Con menos fotos se exportan solo las piezas completas, sin duplicar ni inventar fotografías.
 
 También puedes pulsar **Guardar en carpeta**: elige una ubicación y se creará allí la carpeta del código con los PNG numerados, sin ZIP. Está disponible en la app de Windows y en navegadores que permiten elegir carpetas con permiso de escritura (como Chrome/Edge). En Windows se abre la carpeta al terminar. **Ubicación de guardado** permite elegir y recordar la carpeta de destino en ese equipo. Si ya existe ese código, puedes **Reemplazar y respaldar** (la anterior se conserva como `12238 - anterior`), **Guardar otra copia** (`12238 (2)`, `(3)`, etc.) o **Cancelar**. Al reemplazar se crea una carpeta nueva para evitar mezclar imágenes de exportaciones anteriores. El navegador puede volver a pedir permiso de escritura al reabrirlo. En otros navegadores, descarga el ZIP y extráelo para obtener la misma carpeta.
 
@@ -84,7 +84,7 @@ La integración utiliza el [endpoint oficial compatible con OpenAI de MiniMax](h
 - Al abrir la versión nueva en el navegador anterior y en la misma dirección (`127.0.0.1:5173`), sus publicaciones IndexedDB se copian a SQLite una sola vez por código. No se borran las copias anteriores ni se reemplazan publicaciones ya guardadas en SQLite. Haz esto antes de cerrar definitivamente la versión del navegador; alternativamente, importa sus archivos `.piezas` en la app instalada. La configuración local anterior se copia al iniciar Vite.
 - El borrador anterior se migra a una publicación si ya tiene un código válido. Si no, se conserva una copia recuperable mediante **Guardar borrador anterior por código**. Los archivos `.piezas` anteriores siguen siendo compatibles; necesitan un código válido al importarlos. Importar un código existente pide confirmar su reemplazo.
 - Para usarlo en otra PC, instala Piezas, conecta OneDrive con la misma cuenta (o copia las fotos), selecciona allí la carpeta `Fotos` y abre los archivos `.piezas` que quieras trasladar. Los datos de SQLite no se sincronizan entre equipos. Las fotos, publicaciones y claves no se suben a GitHub. Para respaldar toda la base manualmente, cierra Piezas y el servidor de desarrollo antes de copiar la carpeta de datos.
-- Las fotos cargadas se normalizan a un máximo de 3000 px en su lado mayor y JPEG de alta calidad para limitar el uso de memoria. Los logos conservan transparencia en PNG. Los PNG finales siempre tienen 1080 × 1350 px.
+- Las fotos cargadas se normalizan a un máximo de 3000 px en su lado mayor y JPEG de alta calidad para limitar el uso de memoria. Los logos conservan transparencia en PNG. La portada final tiene 1080 × 1350 px; las fotografías interiores usan el tamaño de la imagen cargada (hasta 3000 px en su lado mayor), sin ampliarla ni añadir bordes.
 
 ## Ejemplo local
 

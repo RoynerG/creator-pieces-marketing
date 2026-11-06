@@ -153,11 +153,28 @@ function areaIcon(ctx, x, y, color) {
   fitText(ctx, "m²", 1, 9, 35, 25, 700, color, 0, "center", "Montserrat");
   ctx.restore();
 }
-export function renderPiece(canvas, state, index) {
+export function pieceDimensions(state, index, maxEdge = 3000) {
+  const image = state.photos[index]?.image;
+  const width =
+    index === 0 || !image ? WIDTH : image.naturalWidth || image.width;
+  const height =
+    index === 0 || !image ? HEIGHT : image.naturalHeight || image.height;
+  const scale = Math.min(1, maxEdge / Math.max(width, height));
+  return {
+    width: Math.max(1, Math.round(width * scale)),
+    height: Math.max(1, Math.round(height * scale)),
+  };
+}
+export function renderPiece(canvas, state, index, maxEdge = 3000) {
+  const dimensions = pieceDimensions(state, index, maxEdge);
+  canvas.width = dimensions.width;
+  canvas.height = dimensions.height;
+  const width = index === 0 ? WIDTH : dimensions.width;
+  const height = index === 0 ? HEIGHT : dimensions.height;
   const ctx = canvas.getContext("2d");
   ctx.save();
-  ctx.setTransform(canvas.width / WIDTH, 0, 0, canvas.height / HEIGHT, 0, 0);
-  ctx.clearRect(0, 0, WIDTH, HEIGHT);
+  ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
+  ctx.clearRect(0, 0, width, height);
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   const s = state.settings,
@@ -235,18 +252,24 @@ export function renderPiece(canvas, state, index) {
       );
     }
   } else {
-    if (photo) imageContain(ctx, photo.image, 0, 0, WIDTH, HEIGHT, s.navy);
-    else placeholder(ctx, 0, 0, WIDTH, HEIGHT, s.navy);
+    if (photo) ctx.drawImage(photo.image, 0, 0, width, height);
+    else placeholder(ctx, 0, 0, width, height, s.navy);
   }
   if (state.logoImage) {
-    const size = s.logoSize,
+    const scale = index === 0 ? 1 : Math.min(width / WIDTH, height / HEIGHT);
+    const size = s.logoSize * scale,
       max = index === 0 ? Math.min(size, 170) : size;
     const ratio = state.logoImage.naturalWidth / state.logoImage.naturalHeight;
     const w = ratio >= 1 ? max : max * ratio,
       h = ratio >= 1 ? max / ratio : max;
     const x =
-      index === 0 ? 954 - w / 2 : s.logoPosition === "left" ? 66 : 1014 - w;
-    ctx.drawImage(state.logoImage, x, 1278 - h, w, h);
+      index === 0
+        ? 954 - w / 2
+        : s.logoPosition === "left"
+          ? 66 * scale
+          : width - 66 * scale - w;
+    const y = index === 0 ? 1278 - h : height - 72 * scale - h;
+    ctx.drawImage(state.logoImage, x, y, w, h);
   }
   ctx.restore();
 }

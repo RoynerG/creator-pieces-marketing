@@ -341,9 +341,44 @@
             <div class="format-badge">
               <i data-icon="frame"></i
               ><span
-                ><strong>1080 × 1350 px</strong
-                ><small>Vertical · Formato 4:5</small></span
+                ><strong>Portada 1080 × 1350 px</strong
+                ><small>Fotos completas · Sin franjas</small></span
               >
+            </div>
+          </section>
+          <section class="export-bar">
+            <div>
+              <i data-icon="download"></i>
+              <div>
+                <h2>Guarda tus imágenes</h2>
+                <p id="export-help">
+                  Carga tus fotos y descarga el carrusel completo.
+                </p>
+                <p id="export-destination" hidden>
+                  Destino: elige una ubicación al guardar.
+                </p>
+              </div>
+            </div>
+            <div class="export-actions">
+              <button
+                class="button outline"
+                data-route="configuracion"
+                type="button"
+              >
+                Ubicación de guardado
+              </button>
+              <button
+                class="button yellow"
+                id="export-folder"
+                type="button"
+                hidden
+              >
+                Guardar en carpeta
+              </button>
+              <button class="button yellow" id="export-all" type="button">
+                <i data-icon="download"></i><span>Descargar carrusel</span
+                ><span class="button-tag">ZIP</span>
+              </button>
             </div>
           </section>
           <div class="studio">
@@ -653,41 +688,6 @@
               </div>
             </section>
           </div>
-          <section class="export-bar">
-            <div>
-              <span class="step-number">03</span>
-              <div>
-                <h2>Tu próxima publicación empieza aquí.</h2>
-                <p id="export-help">
-                  Carga tus fotos y descarga el carrusel completo.
-                </p>
-                <p id="export-destination" hidden>
-                  Destino: elige una ubicación al guardar.
-                </p>
-              </div>
-            </div>
-            <div class="export-actions">
-              <button
-                class="button outline"
-                data-route="configuracion"
-                type="button"
-              >
-                Ubicación de guardado
-              </button>
-              <button
-                class="button yellow"
-                id="export-folder"
-                type="button"
-                hidden
-              >
-                Guardar en carpeta
-              </button>
-              <button class="button yellow" id="export-all" type="button">
-                <i data-icon="download"></i><span>Descargar carrusel</span
-                ><span class="button-tag">ZIP</span>
-              </button>
-            </div>
-          </section>
         </div>
         <section
           id="description-workspace"

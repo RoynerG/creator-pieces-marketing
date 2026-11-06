@@ -419,7 +419,7 @@ function requestRender() {
   renderFrame = requestAnimationFrame(render);
 }
 function render() {
-  renderPiece($("#preview"), state, selected);
+  renderPiece($("#preview"), state, selected, 1350);
   $("#preview").setAttribute(
     "aria-label",
     `${selected === 0 ? "Portada" : `Fotografía ${selected + 1}`} del inmueble ${state.settings.reference || "sin código"}`,
@@ -473,7 +473,7 @@ function render() {
   }
   [...filmstrip.children].forEach((button, i) => {
     button.setAttribute("aria-pressed", String(selected === i));
-    renderPiece(button.querySelector("canvas"), state, i);
+    renderPiece(button.querySelector("canvas"), state, i, 135);
   });
 }
 function updatePhotoList() {
@@ -705,7 +705,7 @@ $("#download-one").addEventListener("click", () =>
     canvas.height = HEIGHT;
     renderPiece(canvas, state, selected);
     download(await canvasBlob(canvas), pieceFilename(selected));
-    notice("Pieza descargada en 1080 × 1350 px.");
+    notice(`Pieza descargada en ${canvas.width} × ${canvas.height} px.`);
   }),
 );
 async function renderExportImages() {
