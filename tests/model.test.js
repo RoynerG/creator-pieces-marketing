@@ -3,11 +3,66 @@ import assert from "node:assert/strict";
 import { descriptionDefaults } from "../src/caption-model.js";
 import {
   containRect,
+  coverRect,
+  normalizeFraming,
   normalizeSettings,
   safeFilename,
   validateProject,
   defaults,
 } from "../src/model.js";
+
+test("portrait framing keeps image geometry and reaches each edge without gaps", () => {
+  for (const [iw, ih] of [
+    [1600, 900],
+    [900, 1600],
+    [1080, 1350],
+  ]) {
+    for (const x of [0, 50, 100])
+      for (const y of [0, 50, 100]) {
+        const r = coverRect(iw, ih, 1080, 1350, { x, y });
+        assert.ok(Math.abs(r.width / r.height - 1080 / 1350) < 1e-9);
+        assert.ok(
+          r.x >= 0 &&
+            r.y >= 0 &&
+            r.x + r.width <= iw + 1e-9 &&
+            r.y + r.height <= ih + 1e-9,
+        );
+        if (x === 0) assert.equal(r.x, 0);
+        if (x === 100) assert.equal(r.x + r.width, iw);
+        if (y === 100) assert.equal(r.y + r.height, ih);
+      }
+  }
+  assert.deepEqual(normalizeFraming({ x: -20, y: 200 }), { x: 0, y: 100 });
+  assert.deepEqual(normalizeFraming({ x: "bad", y: Infinity }), {
+    x: 50,
+    y: 50,
+  });
+});
+
+test("framing stays with each photo through portable project round trips", () => {
+  const photos = [
+    {
+      name: "Sala",
+      src: "data:image/png;base64,YQ==",
+      framing: { x: 20, y: 80 },
+    },
+    {
+      name: "Cocina",
+      src: "data:image/png;base64,Yg==",
+      framing: { x: 100, y: 0 },
+    },
+  ];
+  const clean = validateProject(
+    JSON.parse(
+      JSON.stringify({
+        version: 1,
+        settings: defaults,
+        photos: photos.toReversed(),
+      }),
+    ),
+  );
+  assert.deepEqual(clean.photos, photos.toReversed());
+});
 
 test("landscape photos remain complete inside a portrait piece", () => {
   const r = containRect(2000, 1000, 1080, 1350);

@@ -16,6 +16,8 @@ import {
   HEIGHT,
   safeFilename,
   normalizeSettings,
+  normalizeFraming,
+  coverRect,
   validateProject,
 } from "./model.js";
 import { renderPiece } from "./render.js";
@@ -206,7 +208,11 @@ function serialize() {
     description: descriptions.get(),
     settings: { ...state.settings },
     logo: state.logo,
-    photos: state.photos.map(({ name, src }) => ({ name, src })),
+    photos: state.photos.map(({ name, src, framing }) => ({
+      name,
+      src,
+      ...(framing ? { framing } : {}),
+    })),
   };
 }
 function openDatabase() {
@@ -431,6 +437,22 @@ function render() {
   $("#previous").disabled = selected === 0;
   $("#next").disabled = selected === 9;
   const photo = state.photos[selected];
+  $("#framing-controls").hidden = selected === 0 || !photo;
+  if (selected > 0 && photo) {
+    const framing = normalizeFraming(photo.framing);
+    const iw = photo.image.naturalWidth,
+      ih = photo.image.naturalHeight;
+    const crop = coverRect(iw, ih, WIDTH, HEIGHT, framing);
+    $("#framing-x-row").hidden = iw - crop.width < 1;
+    $("#framing-y-row").hidden = ih - crop.height < 1;
+    $("#framing-x").value = framing.x;
+    $("#framing-y").value = framing.y;
+    $("#framing-note").textContent =
+      iw - crop.width < 1 && ih - crop.height < 1
+        ? "Esta foto ya tiene la proporción 4:5: se muestra completa."
+        : "Ajuste proporcional a 4:5, sin estirar. Mueve el encuadre para elegir la parte visible; el resto queda fuera.";
+    $("#reset-framing").disabled = framing.x === 50 && framing.y === 50;
+  }
   $("#photo-count").textContent = state.photos.length;
   $("#pieces-summary").textContent = state.photos.length
     ? `1 portada${state.photos.length > 1 ? ` + ${state.photos.length - 1} fotografías` : ""} · ${state.photos.length}/10`
@@ -556,7 +578,7 @@ async function addPhotos(files) {
     changed(true);
     saveDraft();
     notice(
-      `${added} ${added === 1 ? "foto añadida" : "fotos añadidas"}.${errors.length ? ` ${errors.join(" ")}` : " Todas se muestran completas. Puedes cambiar su orden."}`,
+      `${added} ${added === 1 ? "foto añadida" : "fotos añadidas"}.${errors.length ? ` ${errors.join(" ")}` : " Todas las piezas usan el formato 4:5. Puedes cambiar su orden y encuadre."}`,
       !!errors.length,
     );
   });
@@ -622,6 +644,23 @@ $$("[data-field]").forEach((input) =>
 );
 $("#previous").addEventListener("click", () => selectPiece(selected - 1));
 $("#next").addEventListener("click", () => selectPiece(selected + 1));
+for (const axis of ["x", "y"]) {
+  $("#framing-" + axis).addEventListener("input", (event) => {
+    const photo = state.photos[selected];
+    if (!photo || selected === 0) return;
+    photo.framing = {
+      ...normalizeFraming(photo.framing),
+      [axis]: Number(event.target.value),
+    };
+    changed();
+  });
+}
+$("#reset-framing").addEventListener("click", () => {
+  const photo = state.photos[selected];
+  if (!photo || selected === 0) return;
+  photo.framing = { x: 50, y: 50 };
+  changed();
+});
 $("#photos-input").addEventListener("change", (event) => {
   const files = [...event.target.files];
   event.target.value = "";

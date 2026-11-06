@@ -23,6 +23,23 @@ export function containRect(iw, ih, tw, th) {
     height = Math.min(th, ih * scale);
   return { x: (tw - width) / 2, y: (th - height) / 2, width, height };
 }
+export function normalizeFraming(value = {}) {
+  const position = (n) =>
+    Number.isFinite(Number(n)) ? clamp(Number(n), 0, 100) : 50;
+  return { x: position(value?.x ?? 50), y: position(value?.y ?? 50) };
+}
+export function coverRect(iw, ih, tw, th, framing) {
+  const { x, y } = normalizeFraming(framing);
+  const scale = Math.max(tw / iw, th / ih);
+  const width = Math.min(iw, tw / scale);
+  const height = Math.min(ih, th / scale);
+  return {
+    x: ((iw - width) * x) / 100,
+    y: ((ih - height) * y) / 100,
+    width,
+    height,
+  };
+}
 export function safeFilename(value) {
   return (
     String(value)
@@ -84,6 +101,7 @@ export function validateProject(data) {
       return {
         name: String(photo.name || "Fotografía").slice(0, 120),
         src: photo.src,
+        ...(photo.framing ? { framing: normalizeFraming(photo.framing) } : {}),
       };
     }),
   };

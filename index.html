@@ -341,8 +341,8 @@
             <div class="format-badge">
               <i data-icon="frame"></i
               ><span
-                ><strong>Portada 1080 × 1350 px</strong
-                ><small>Fotos completas · Sin franjas</small></span
+                ><strong>Todas: 1080 × 1350 px</strong
+                ><small>Formato 4:5 · Sin estirar</small></span
               >
             </div>
           </section>
@@ -545,8 +545,9 @@
                 />
                 <div id="photo-list" class="photo-list"></div>
                 <p class="helper">
-                  Usa las flechas para ordenar. Cada foto se muestra completa,
-                  sin recortes ni deformación.
+                  Usa las flechas para ordenar. Todas las piezas son verticales
+                  4:5. Selecciona una miniatura para ajustar su encuadre sin
+                  estirar.
                 </p>
               </section>
               <section
@@ -676,6 +677,50 @@
                 id="filmstrip"
                 aria-label="Selecciona una pieza"
               ></div>
+              <section
+                id="framing-controls"
+                class="framing-controls"
+                aria-label="Encuadre de la fotografía"
+                hidden
+              >
+                <div class="framing-heading">
+                  <h3>Encuadre de esta foto</h3>
+                  <button
+                    id="reset-framing"
+                    class="button outline"
+                    type="button"
+                  >
+                    Centrar foto
+                  </button>
+                </div>
+                <p id="framing-note" class="helper"></p>
+                <div id="framing-x-row">
+                  <label for="framing-x">Encuadre horizontal</label
+                  ><input
+                    id="framing-x"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="50"
+                  />
+                  <div class="framing-ends">
+                    <span>Mostrar izquierda</span><span>Mostrar derecha</span>
+                  </div>
+                </div>
+                <div id="framing-y-row">
+                  <label for="framing-y">Encuadre vertical</label
+                  ><input
+                    id="framing-y"
+                    type="range"
+                    min="0"
+                    max="100"
+                    value="50"
+                  />
+                  <div class="framing-ends">
+                    <span>Mostrar arriba</span><span>Mostrar abajo</span>
+                  </div>
+                </div>
+              </section>
               <div class="preview-bottom">
                 <span
                   ><i data-icon="layers"></i

@@ -1092,3 +1092,33 @@ dialog p {
     scroll-behavior: auto !important;
   }
 }
+
+.framing-controls {
+  margin: 0 20px 16px;
+  padding: 16px;
+  border: 1px solid #e0e5ec;
+  border-radius: 8px;
+  background: #fafbfd;
+}
+.framing-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+.framing-heading h3 {
+  font-size: 13px;
+}
+.framing-controls input[type="range"] {
+  width: 100%;
+  min-height: 32px;
+  margin: 0;
+}
+.framing-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 11px;
+  color: #65758b;
+}

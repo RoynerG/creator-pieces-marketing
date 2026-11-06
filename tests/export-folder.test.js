@@ -74,23 +74,21 @@ test("export refuses unsafe Windows names, missing images and invalid PNG dimens
   assert.throws(() => validatePieceExport({ code: "12238", images: [wrong] }));
 });
 
-test("folder export accepts mixed landscape, square and portrait photographs", () => {
-  const images = [
-    [1080, 1350],
+test("folder export rejects any piece with a different size from the cover", () => {
+  for (const [w, h] of [
     [1600, 900],
     [1200, 1200],
     [900, 1600],
-  ].map(([w, h]) => {
+  ]) {
     const bytes = pngHeader();
     bytes.writeUInt32BE(w, 16);
     bytes.writeUInt32BE(h, 20);
-    return bytes;
-  });
-  assert.deepEqual(
-    validatePieceExport({ code: "12238", images }).images,
-    images,
-  );
+    assert.throws(() =>
+      validatePieceExport({ code: "12238", images: [pngHeader(), bytes] }),
+    );
+  }
 });
+
 test("browser folder export refuses an existing folder before opening any file", async () => {
   let writes = 0;
   const parent = {

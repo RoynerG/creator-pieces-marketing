@@ -25,13 +25,11 @@ export function validatePieceExport(input) {
         .subarray(0, 8)
         .equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10])) ||
       bytes.toString("ascii", 12, 16) !== "IHDR" ||
-      bytes.readUInt32BE(16) < 1 ||
-      bytes.readUInt32BE(16) > 3000 ||
-      bytes.readUInt32BE(20) < 1 ||
-      bytes.readUInt32BE(20) > 3000
+      bytes.readUInt32BE(16) !== 1080 ||
+      bytes.readUInt32BE(20) !== 1350
     ) {
       throw new Error(
-        "Las piezas deben ser PNG de hasta 3000 px por lado y 25 MB cada una (150 MB en total).",
+        "Las piezas deben ser PNG de 1080 × 1350 px y hasta 25 MB cada una (150 MB en total).",
       );
     }
     return bytes;

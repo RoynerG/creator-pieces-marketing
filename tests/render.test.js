@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { renderPiece, pieceDimensions } from "../src/render.js";
 import { defaults } from "../src/model.js";
 
-test("gallery exports the whole photo edge to edge with logo inside every aspect ratio", () => {
+test("gallery fills the same portrait canvas without stretching for every source aspect ratio", () => {
   for (const [width, height] of [
     [1080, 810],
     [810, 1080],
@@ -34,16 +34,26 @@ test("gallery exports the whole photo edge to edge with logo inside every aspect
       };
       const canvas = { getContext: () => ctx };
       renderPiece(canvas, state, 1);
-      assert.deepEqual([canvas.width, canvas.height], [width, height]);
-      assert.deepEqual(draws[0], [image, 0, 0, width, height]);
+      assert.deepEqual([canvas.width, canvas.height], [1080, 1350]);
+      const [source, sx, sy, sw, sh, dx, dy, dw, dh] = draws[0];
+      assert.equal(source, image);
+      assert.deepEqual([dx, dy, dw, dh], [0, 0, 1080, 1350]);
+      assert.ok(
+        sx >= 0 &&
+          sy >= 0 &&
+          sx + sw <= width + 0.001 &&
+          sy + sh <= height + 0.001,
+      );
+      assert.ok(
+        Math.abs(dw / sw - dh / sh) < 0.00001,
+        "Equal scale on both axes",
+      );
       assert.equal(fills.length, 0, "No colored padding is drawn");
       const [, x, y, w, h] = draws[1];
-      assert.ok(x >= 0 && y >= 0 && x + w <= width && y + h <= height);
+      assert.ok(x >= 0 && y >= 0 && x + w <= 1080 && y + h <= 1350);
       assert.equal(w / h, 2, "Logo is not stretched");
       const preview = pieceDimensions(state, 1, 1350);
-      assert.ok(
-        Math.abs(preview.width / preview.height - width / height) < 0.01,
-      );
+      assert.ok(preview.width === 1080 && preview.height === 1350);
       assert.deepEqual(pieceDimensions(state, 0), {
         width: 1080,
         height: 1350,

@@ -1,4 +1,4 @@
-import { WIDTH, HEIGHT, containRect } from "./model.js";
+import { WIDTH, HEIGHT, containRect, coverRect } from "./model.js";
 
 function fitText(
   ctx,
@@ -154,23 +154,18 @@ function areaIcon(ctx, x, y, color) {
   ctx.restore();
 }
 export function pieceDimensions(state, index, maxEdge = 3000) {
-  const image = state.photos[index]?.image;
-  const width =
-    index === 0 || !image ? WIDTH : image.naturalWidth || image.width;
-  const height =
-    index === 0 || !image ? HEIGHT : image.naturalHeight || image.height;
-  const scale = Math.min(1, maxEdge / Math.max(width, height));
+  const scale = Math.min(1, maxEdge / HEIGHT);
   return {
-    width: Math.max(1, Math.round(width * scale)),
-    height: Math.max(1, Math.round(height * scale)),
+    width: Math.max(1, Math.round(WIDTH * scale)),
+    height: Math.max(1, Math.round(HEIGHT * scale)),
   };
 }
 export function renderPiece(canvas, state, index, maxEdge = 3000) {
   const dimensions = pieceDimensions(state, index, maxEdge);
   canvas.width = dimensions.width;
   canvas.height = dimensions.height;
-  const width = index === 0 ? WIDTH : dimensions.width;
-  const height = index === 0 ? HEIGHT : dimensions.height;
+  const width = WIDTH;
+  const height = HEIGHT;
   const ctx = canvas.getContext("2d");
   ctx.save();
   ctx.setTransform(canvas.width / width, 0, 0, canvas.height / height, 0, 0);
@@ -252,8 +247,27 @@ export function renderPiece(canvas, state, index, maxEdge = 3000) {
       );
     }
   } else {
-    if (photo) ctx.drawImage(photo.image, 0, 0, width, height);
-    else placeholder(ctx, 0, 0, width, height, s.navy);
+    if (photo) {
+      const image = photo.image;
+      const crop = coverRect(
+        image.naturalWidth || image.width,
+        image.naturalHeight || image.height,
+        width,
+        height,
+        photo.framing,
+      );
+      ctx.drawImage(
+        image,
+        crop.x,
+        crop.y,
+        crop.width,
+        crop.height,
+        0,
+        0,
+        width,
+        height,
+      );
+    } else placeholder(ctx, 0, 0, width, height, s.navy);
   }
   if (state.logoImage) {
     const scale = index === 0 ? 1 : Math.min(width / WIDTH, height / HEIGHT);
