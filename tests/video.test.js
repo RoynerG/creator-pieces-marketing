@@ -108,14 +108,14 @@ test("transitions overlap consecutive scenes and music fades with the video", ()
       file: "a.png",
       background: "#081121",
     })),
-    music: "song.mp3",
+    music: { file: "song.mp3", gain: -13.3 },
     output: "out.mp4",
   });
   const graph = args[args.indexOf("-filter_complex") + 1];
   assert.equal(total, 12.4);
   assert.match(graph, /xfade=transition=slidedown:duration=0.5:offset=4\[x1\]/);
-  assert.match(graph, /xfade=transition=slidedown:duration=0.5:offset=8\[x2\]/);
-  assert.match(graph, /afade=t=out:st=11.4:d=1/);
+  assert.match(graph, /xfade=transition=slideleft:duration=0.5:offset=8\[x2\]/);
+  assert.match(graph, /volume=-13.3dB,afade=t=out:st=11.4:d=1/);
 });
 
 test("video settings are bounded and old projects open with defaults", () => {
@@ -212,6 +212,21 @@ test("renders a vertical H.264 video with cover, clip, photo, closing and music"
   assert.equal(total, 4 + 1.5 + 2 + 4.4);
   const job = await finished(url);
   assert.equal(job.status, "done", job.error);
+  const { stderr } = await run(ffmpeg, [
+    "-hide_banner",
+    "-i",
+    path.join(dir, "media", "7016", "final.mp4"),
+    "-af",
+    "volumedetect",
+    "-vn",
+    "-f",
+    "null",
+    "-",
+  ]);
+  assert.ok(
+    Number(stderr.match(/mean_volume: (-?[\d.]+)/)[1]) < -20,
+    "la música debe quedar de fondo",
+  );
   const download = await fetch(`${url}/api/video/final?code=7016&download=1`);
   assert.equal(
     download.headers.get("content-disposition"),
@@ -229,6 +244,60 @@ test("renders a vertical H.264 video with cover, clip, photo, closing and music"
   });
   assert.equal(partial.status, 206);
   assert.equal((await partial.arrayBuffer()).byteLength, 100);
+});
+
+test("videos include the built-in song without any configuration", async (t) => {
+  const { dir, url } = await server(t);
+  const initial = await (await fetch(`${url}/api/video/media?code=7016`)).json();
+  assert.equal(initial.defaultMusic.builtIn, true);
+  const cover = await dataUrl(dir, "cover.png", "white");
+  await render(url, {
+    code: "7016",
+    mode: "photos",
+    background: "#051226",
+    cover,
+    closing: cover,
+  });
+  const job = await finished(url);
+  assert.equal(job.status, "done", job.error);
+  assert.match(
+    await probe(path.join(dir, "media", "7016", "final.mp4")),
+    /Audio: aac/,
+  );
+});
+
+test("default music applies only to publications without their own song", async (t) => {
+  const { dir, url } = await server(t);
+  const song = await generate(
+    path.join(dir, "song.m4a"),
+    "-f",
+    "lavfi",
+    "-i",
+    "sine=frequency=440:duration=2",
+  );
+  assert.equal((await upload(url, "_marca", "music", song)).status, 200);
+  assert.equal((await upload(url, "_marca", "video", song)).status, 400);
+  const cover = await dataUrl(dir, "cover.png", "white");
+  const started = await render(url, {
+    code: "7016",
+    mode: "photos",
+    background: "#081121",
+    cover,
+    closing: cover,
+  });
+  assert.equal(started.status, 202);
+  assert.equal((await finished(url)).status, "done");
+  const state = await (await fetch(`${url}/api/video/media?code=7016`)).json();
+  assert.equal(state.music, null);
+  assert.equal(state.defaultMusic.name, "song.m4a");
+  assert.match(
+    await probe(path.join(dir, "media", "7016", "final.mp4")),
+    /Audio: aac/,
+  );
+  assert.equal(
+    (await render(url, { code: "_marca", background: "#000000" })).status,
+    400,
+  );
 });
 
 test("HDR reference white stays white after converting phone footage", async (t) => {

@@ -1,5 +1,14 @@
 import path from "node:path";
-import { writeFile, lstat, rename, mkdtemp } from "node:fs/promises";
+import {
+  copyFile,
+  lstat,
+  mkdir,
+  mkdtemp,
+  readdir,
+  rename,
+  rmdir,
+  writeFile,
+} from "node:fs/promises";
 import { exportFolderName, pieceFilename } from "../src/export-files.js";
 
 export function validatePieceExport(input) {
@@ -57,18 +66,24 @@ export async function savePieceFolder(parent, input, onConflict) {
   let target = path.join(parent, code),
     backup;
   const previous = await exists(target);
+  let onlyVideo = false;
   if (previous) {
     if (!previous.isDirectory() || previous.isSymbolicLink())
       throw new Error(
         `El destino ${code} no es una carpeta normal. Elige otra ubicación.`,
       );
-    if (!onConflict) throw new Error(`Ya existe la carpeta ${code}.`);
-    const choice = await onConflict(code);
-    if (choice === "cancel") return { canceled: true };
-    if (choice === "copy") target = await uniquePath(parent, code);
-    else if (choice === "replace")
-      backup = await uniquePath(parent, `${code} - anterior`);
-    else throw new Error("Elige qué hacer con la carpeta existente.");
+    // A folder holding only the video has no images to replace.
+    onlyVideo = (await readdir(target)).join() === "video";
+    if (onlyVideo) backup = await uniquePath(parent, `${code} - anterior`);
+    else {
+      if (!onConflict) throw new Error(`Ya existe la carpeta ${code}.`);
+      const choice = await onConflict(code);
+      if (choice === "cancel") return { canceled: true };
+      if (choice === "copy") target = await uniquePath(parent, code);
+      else if (choice === "replace")
+        backup = await uniquePath(parent, `${code} - anterior`);
+      else throw new Error("Elige qué hacer con la carpeta existente.");
+    }
   }
   // Rendered files are completed before moving an existing export to backup.
   const staging = await mkdtemp(path.join(parent, `.piezas-${code}-`));
@@ -92,5 +107,24 @@ export async function savePieceFolder(parent, input, onConflict) {
       `No se pudo completar la carpeta. Las imágenes generadas están en ${staging}.`,
     );
   }
+  if (backup && (await exists(path.join(backup, "video")))) {
+    await rename(path.join(backup, "video"), path.join(target, "video"));
+    if (onlyVideo) {
+      await rmdir(backup);
+      backup = undefined;
+    }
+  }
   return { folder: target, backup, count: images.length };
+}
+export async function savePieceVideo(parent, input, source) {
+  const code = exportFolderName(input),
+    folder = path.join(parent, code, "video"),
+    file = path.join(folder, `${code}.mp4`),
+    temp = `${file}.tmp`;
+  await mkdir(folder, { recursive: true });
+  await copyFile(source, temp);
+  if (await exists(file))
+    await rename(file, path.join(folder, `${code} - anterior.mp4`));
+  await rename(temp, file);
+  return { folder, file };
 }

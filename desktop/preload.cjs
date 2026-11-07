@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld("piezasDesktop", {
   chooseExportDestination: () =>
     ipcRenderer.invoke("piezas:choose-export-destination"),
   savePieces: (input) => ipcRenderer.invoke("piezas:save-pieces", input),
+  saveVideo: (input) => ipcRenderer.invoke("piezas:save-video", input),
   openDataFolder: () => ipcRenderer.invoke("piezas:open-data"),
   readyToClose: () => ipcRenderer.send("piezas:ready-close"),
   onCloseRequested: (callback) => {

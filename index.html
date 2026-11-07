@@ -179,6 +179,37 @@
             </p>
           </section>
           <section class="settings-card">
+            <h2><i data-icon="video"></i> Música de los videos</h2>
+            <p>
+              Esta canción suena en todos los videos que no tengan una propia.
+            </p>
+            <label class="dropzone" for="default-music-input"
+              ><i data-icon="upload"></i><strong>Música predeterminada</strong
+              ><span>Haz clic para elegirla</span
+              ><small>MP3, M4A, AAC, WAV u OGG · Máx. 200 MB</small></label
+            ><input
+              class="sr-only"
+              id="default-music-input"
+              type="file"
+              accept="audio/*,.m4a"
+            />
+            <div class="video-file">
+              <span id="default-music-name">Real Estate.mp3 (incluida)</span
+              ><button
+                type="button"
+                id="default-music-remove"
+                class="text-button"
+                hidden
+              >
+                Quitar
+              </button>
+            </div>
+            <p class="helper">
+              Viene incluida Real Estate. Si eliges otra, se guarda solo en este
+              equipo.
+            </p>
+          </section>
+          <section class="settings-card">
             <h2><i data-icon="edit"></i> Marca y contacto</h2>
             <p>
               El logo, los colores y los datos de contacto se ajustan dentro de
@@ -839,7 +870,19 @@
                     Quitar
                   </button>
                 </div>
+                <label for="music-volume"
+                  >Volumen de la música:
+                  <output id="music-volume-output">25%</output></label
+                ><input
+                  id="music-volume"
+                  data-field="musicVolume"
+                  type="range"
+                  min="5"
+                  max="100"
+                  step="5"
+                />
                 <p class="helper">
+                  Sin archivo, usa la música predeterminada de Configuración.
                   Suena en todo el video, se repite si es corta y baja suave al
                   final.
                 </p>
@@ -926,9 +969,19 @@
               </div>
               <div id="video-result" hidden>
                 <video id="video-player" controls preload="metadata"></video>
-                <a id="video-download" class="button yellow">
-                  <i data-icon="download"></i> Descargar video
-                </a>
+                <div class="video-result-actions">
+                  <button
+                    type="button"
+                    id="video-save-folder"
+                    class="button yellow"
+                    hidden
+                  >
+                    Guardar en carpeta
+                  </button>
+                  <a id="video-download" class="button outline">
+                    <i data-icon="download"></i> Descargar video
+                  </a>
+                </div>
               </div>
             </section>
           </div>

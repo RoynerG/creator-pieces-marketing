@@ -22,7 +22,8 @@ export const defaults = {
   logoPosition: "right",
   videoMode: "photos",
   photoSeconds: 4,
-  videoColor: "#081121",
+  videoColor: "#051226",
+  musicVolume: 25,
   closingMessage: "Contáctanos para ofrecerte la casa de tus sueños",
   instagram: "@goctgrealstate",
   website: "www.gocartagenarealestate.com",
@@ -95,6 +96,11 @@ export function normalizeSettings(input = {}) {
     Number(input.photoSeconds) || defaults.photoSeconds,
     2,
     8,
+  );
+  settings.musicVolume = clamp(
+    Number(input.musicVolume) || defaults.musicVolume,
+    5,
+    100,
   );
   return settings;
 }

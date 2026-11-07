@@ -68,6 +68,7 @@ const video = initVideo({
   getState: () => state,
   getCode: () => activeCode,
   getPhone: () => descriptions.get().phone,
+  exportDestination,
   notice,
 });
 const publications = initPublications({
@@ -93,7 +94,8 @@ const navigation = initNavigation({
     await flushPublication();
     return true;
   },
-  refresh: () => publications.refresh(),
+  refresh: () =>
+    Promise.all([publications.refresh(), video.refreshDefaultMusic()]),
   create: () => publications.showNew(),
   openProject: () => $("#open-project").click(),
   configureAI: () => $("#configure-ai").click(),

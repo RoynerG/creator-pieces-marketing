@@ -12,6 +12,7 @@ import {
 import path from "node:path";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import { fileURLToPath } from "node:url";
 import ffmpegStatic from "ffmpeg-static";
 import {
   VIDEO_HEIGHT,
@@ -34,6 +35,31 @@ const HDR_TO_SDR =
 const CLOSING_FADE_DELAY = 0.15;
 const CLOSING_FADE_SECONDS = 0.6;
 const MUSIC_FADE_SECONDS = 1;
+// Songs are leveled to this average first, so musicVolume means the same for all.
+const MUSIC_REFERENCE_DB = -14;
+const TRANSITIONS = [
+  "slidedown",
+  "slideleft",
+  "fade",
+  "slideup",
+  "circleopen",
+  "slideright",
+  "smoothleft",
+  "wipedown",
+];
+// Not a valid publication code, so it can never collide with one.
+const BRAND = "_marca";
+const BUILT_IN_MUSIC = {
+  name: "Real Estate.mp3",
+  duration: 120.05,
+  builtIn: true,
+};
+// FFmpeg is a separate process and cannot read files inside the asar archive.
+const builtInMusicFile = () =>
+  fileURLToPath(new URL("./assets/real-estate.mp3", import.meta.url)).replace(
+    "app.asar",
+    "app.asar.unpacked",
+  );
 const MEDIA = {
   video: {
     extensions: [".mp4", ".mov", ".m4v", ".webm", ".mkv"],
@@ -112,16 +138,16 @@ export function videoArgs({ segments, music, output }) {
   for (let i = 1; i < labels.length; i++) {
     elapsed += segments[i - 1].seconds - VIDEO_TRANSITION_SECONDS;
     filters.push(
-      `[${last}][${labels[i]}]xfade=transition=slidedown:duration=${VIDEO_TRANSITION_SECONDS}:offset=${seconds(elapsed)}[x${i}]`,
+      `[${last}][${labels[i]}]xfade=transition=${TRANSITIONS[(i - 1) % TRANSITIONS.length]}:duration=${VIDEO_TRANSITION_SECONDS}:offset=${seconds(elapsed)}[x${i}]`,
     );
     last = `x${i}`;
   }
   const total = seconds(elapsed + segments.at(-1).seconds);
   const audio = [];
   if (music) {
-    inputs.push("-stream_loop", "-1", "-i", music);
+    inputs.push("-stream_loop", "-1", "-i", music.file);
     filters.push(
-      `[${index}:a]atrim=duration=${total},asetpts=N/SR/TB,afade=t=out:st=${seconds(total - MUSIC_FADE_SECONDS)}:d=${MUSIC_FADE_SECONDS}[audio]`,
+      `[${index}:a]atrim=duration=${total},asetpts=N/SR/TB,volume=${music.gain.toFixed(1)}dB,afade=t=out:st=${seconds(total - MUSIC_FADE_SECONDS)}:d=${MUSIC_FADE_SECONDS}[audio]`,
     );
     audio.push(
       "-map",
@@ -187,6 +213,25 @@ function probe(ffmpeg, file) {
     });
   });
 }
+function musicGain(ffmpeg, file, percent) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      ffmpeg,
+      ["-hide_banner", "-i", file, "-af", "volumedetect", "-vn", "-f", "null", "-"],
+      { stdio: ["ignore", "ignore", "pipe"], windowsHide: true },
+    );
+    let text = "";
+    child.stderr.on("data", (chunk) => (text += chunk));
+    child.on("error", reject);
+    child.on("close", () => {
+      const mean = Number(text.match(/mean_volume: (-?[\d.]+) dB/)?.[1]);
+      resolve(
+        (Number.isFinite(mean) ? MUSIC_REFERENCE_DB - mean : 0) +
+          20 * Math.log10(percent / 100),
+      );
+    });
+  });
+}
 function json(res, status, data) {
   if (res.destroyed) return;
   res.writeHead(status, {
@@ -207,7 +252,8 @@ async function readMeta(file) {
 export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
   const mediaRoot = path.join(root, "media");
   let job = null;
-  const folder = (code) => path.join(mediaRoot, publicationFolder(code));
+  const folder = (code) =>
+    path.join(mediaRoot, code === BRAND ? BRAND : publicationFolder(code));
   const running = () => job?.status === "running";
   const metaFile = (code, kind) => path.join(folder(code), `${kind}.json`);
   const finalFile = (code) => path.join(folder(code), "final.mp4");
@@ -273,6 +319,8 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
     return {
       video: await readMeta(metaFile(code, "video")),
       music: await readMeta(metaFile(code, "music")),
+      defaultMusic:
+        (await readMeta(metaFile(BRAND, "music"))) || BUILT_IN_MUSIC,
       final,
     };
   }
@@ -331,10 +379,22 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
         });
     }
     const output = path.join(temp, "final.mp4");
+    const song = media.music
+      ? path.join(folder(code), media.music.file)
+      : media.defaultMusic.builtIn
+        ? builtInMusicFile()
+        : path.join(folder(BRAND), media.defaultMusic.file);
     const { args, total } = videoArgs({
       segments,
       output,
-      music: media.music && path.join(folder(code), media.music.file),
+      music: {
+        file: song,
+        gain: await musicGain(
+          ffmpeg,
+          song,
+          Math.min(100, Math.max(5, Number(input.musicVolume) || 25)),
+        ),
+      },
     });
     const child = spawn(ffmpeg, args, {
       stdio: ["ignore", "pipe", "pipe"],
@@ -419,7 +479,9 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
         if (running())
           throw new ApiError(409, "Espera a que termine el video actual.");
         const kind = url.searchParams.get("kind");
-        publicationFolder(code);
+        if (code !== BRAND) publicationFolder(code);
+        else if (kind !== "music")
+          throw new ApiError(400, "Tipo de archivo no válido.");
         if (req.method === "PUT")
           await upload(req, code, kind, url.searchParams.get("name") || "");
         else if (MEDIA[kind]) await removeMedia(code, kind);

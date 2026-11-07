@@ -6,7 +6,11 @@ import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import { startDesktopServer } from "../server/desktop-server.js";
 import { dataDirectory } from "../server/data-path.js";
-import { savePieceFolder, validatePieceExport } from "./export-folder.js";
+import {
+  savePieceFolder,
+  savePieceVideo,
+  validatePieceExport,
+} from "./export-folder.js";
 const { autoUpdater } = updater;
 const directory = dataDirectory();
 mkdirSync(directory, { recursive: true });
@@ -167,6 +171,18 @@ else {
             return ["replace", "copy", "cancel"][answer.response];
           });
           if (!result.canceled) await shell.openPath(result.folder);
+          return { ...result, destination: parent };
+        } catch (error) {
+          return { error: error.message };
+        }
+      });
+      handle("piezas:save-video", async (input) => {
+        try {
+          const parent =
+            (await getExportDestination()) || (await chooseExportDestination());
+          if (!parent) return { canceled: true };
+          const source = path.join(directory, "media", input?.code, "final.mp4");
+          const result = await savePieceVideo(parent, input?.code, source);
           return { ...result, destination: parent };
         } catch (error) {
           return { error: error.message };

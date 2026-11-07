@@ -51,10 +51,32 @@ async function copyBrowserDirectory(source, destination) {
     }
   }
 }
+async function keepBrowserVideo(parent, backup, folder) {
+  try {
+    const previous = await parent.getDirectoryHandle(backup);
+    await copyBrowserDirectory(
+      await previous.getDirectoryHandle("video"),
+      await folder.getDirectoryHandle("video", { create: true }),
+    );
+  } catch (error) {
+    if (error.name !== "NotFoundError") throw error;
+  }
+}
+async function onlyVideo(parent, name) {
+  const names = [];
+  for await (const key of (await parent.getDirectoryHandle(name)).keys())
+    names.push(key);
+  return names.length === 1 && names[0] === "video";
+}
 export async function saveBrowserFolder(parent, code, images, onConflict) {
   let name = exportFolderName(code),
     backup;
   if (await browserExists(parent, name)) {
+    // A folder holding only the video has no images to replace.
+    if (await onlyVideo(parent, name)) {
+      const folder = await parent.getDirectoryHandle(name);
+      return writeBrowserImages(folder, name, images);
+    }
     if (!onConflict) throw new Error(`Ya existe la carpeta ${name}.`);
     const choice = await onConflict(name);
     if (choice === "cancel") return { canceled: true };
@@ -71,24 +93,35 @@ export async function saveBrowserFolder(parent, code, images, onConflict) {
     } else throw new Error("Elige qué hacer con la carpeta existente.");
   }
   const folder = await parent.getDirectoryHandle(name, { create: true });
+  if (backup) await keepBrowserVideo(parent, backup, folder);
+  return writeBrowserImages(folder, name, images, backup);
+}
+async function writeBrowserFile(folder, name, content) {
+  const file = await folder.getFileHandle(name, { create: true });
+  const stream = await file.createWritable();
   try {
-    for (let i = 0; i < images.length; i++) {
-      const file = await folder.getFileHandle(pieceFilename(i), {
-        create: true,
-      });
-      const stream = await file.createWritable();
-      try {
-        await stream.write(images[i]);
-        await stream.close();
-      } catch (error) {
-        await stream.abort().catch(() => {});
-        throw error;
-      }
-    }
+    await stream.write(content);
+    await stream.close();
+  } catch (error) {
+    await stream.abort().catch(() => {});
+    throw error;
+  }
+}
+async function writeBrowserImages(folder, name, images, backup) {
+  try {
+    for (let i = 0; i < images.length; i++)
+      await writeBrowserFile(folder, pieceFilename(i), images[i]);
   } catch {
     throw new Error(
       `No se completó la exportación en ${name}.${backup ? ` La versión anterior está en ${backup}.` : ""} Revisa el espacio y los permisos.`,
     );
   }
   return { folder: name, backup, count: images.length };
+}
+export async function saveBrowserVideo(parent, code, video) {
+  const name = exportFolderName(code),
+    post = await parent.getDirectoryHandle(name, { create: true }),
+    folder = await post.getDirectoryHandle("video", { create: true });
+  await writeBrowserFile(folder, `${name}.mp4`, video);
+  return `${name}/video/${name}.mp4`;
 }

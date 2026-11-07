@@ -84,11 +84,11 @@ En cada publicación, **Crear video** genera un MP4 vertical de **1080 × 1920 p
 1. Prepara la publicación como siempre: datos, fotos y logo. La primera foto se usa de fondo en la portada.
 2. Elige qué mostrar después de la portada: **Solo fotos**, **Solo video del inmueble** o **Video y luego fotos**.
 3. Si usas video, carga el recorrido del inmueble (MP4, MOV, M4V, WebM o MKV, hasta 4 GB). Se usa completo y sin su sonido. Un video horizontal se recorta para llenar la pantalla. Los videos de iPhone, incluidos HEVC y HDR, se convierten automáticamente.
-4. Opcionalmente, carga la música (MP3, M4A, AAC, WAV u OGG, hasta 200 MB). Suena en todo el video, se repite si es corta y baja suavemente en el último segundo. Sin música, el video sale sin sonido. Usa solo música que tengas derecho a publicar.
+4. La app incluye la canción `server/assets/real-estate.mp3`, que suena por defecto en todos los videos. En **Configuración → Música de los videos** puedes elegir otra para ese equipo, y en cada inmueble cargar una propia (MP3, M4A, AAC, WAV u OGG, hasta 200 MB). La música suena en todo el video, se repite si es corta y baja suavemente en el último segundo. La app mide cada canción y la nivela: **Volumen de la música** viene en 25 % para que quede de fondo. Usa solo música que tengas derecho a publicar.
 5. En **Pantalla final** ajusta el mensaje, Instagram, sitio web y color de fondo. El teléfono se toma de **Crear descripción → Tu contacto y marca**.
-6. Pulsa **Generar video**. Al terminar puedes reproducirlo y usar **Descargar video**, que guarda `12238.mp4`.
+6. Pulsa **Generar video**. En la app de Windows se guarda solo en `<ubicación de guardado>\12238\video\12238.mp4`, junto a las imágenes de la publicación. El video anterior se conserva como `12238 - anterior.mp4`. En Chrome o Edge usa **Guardar en carpeta**. **Descargar video** guarda una copia donde elijas. Si reemplazas las imágenes, la carpeta `video` pasa a la carpeta nueva.
 
-La portada dura 4 s y la pantalla final 3,9 s. Cada foto dura lo indicado en **Tiempo por foto** (4 s por defecto), y todas las escenas cambian con la misma transición vertical de 0,5 s.
+La portada y la pantalla final usan el logo oficial incluido en `public/brand/logo.svg`. La portada dura 4 s y la pantalla final 3,9 s. Cada foto dura lo indicado en **Tiempo por foto** (4 s por defecto). Las transiciones duran 0,5 s y van variando a lo largo del video.
 
 El video de origen, la música y el último MP4 generado se guardan por código en `%APPDATA%Piezas Estudiomedia<código>`, no en SQLite. Los archivos `.piezas` conservan los ajustes del video, pero no esos archivos: en otro equipo hay que volver a cargarlos.
 

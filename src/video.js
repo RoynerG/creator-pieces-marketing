@@ -1,5 +1,6 @@
 import "./video.css";
 import { videoPlan } from "./model.js";
+import { saveBrowserVideo } from "./export-files.js";
 import { loadPieceFonts } from "./fonts.js";
 import {
   renderVideoClosing,
@@ -11,9 +12,24 @@ const clock = (value) => {
   const total = Math.round(value);
   return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
 };
-export function initVideo({ getState, getCode, getPhone, notice }) {
+const BRAND = "_marca";
+const logo = new Image();
+const logoReady = new Promise((resolve, reject) => {
+  logo.onload = resolve;
+  logo.onerror = reject;
+});
+logo.src = "/brand/logo.svg";
+export function initVideo({
+  getState,
+  getCode,
+  getPhone,
+  exportDestination,
+  notice,
+}) {
   const $ = (selector) => document.querySelector(selector);
-  let media = { video: null, music: null, final: null },
+  const desktop = window.piezasDesktop;
+  const scene = () => ({ ...getState(), logoImage: logo });
+  let media = { video: null, music: null, defaultMusic: null, final: null },
     busy = false,
     uploading = false,
     polling;
@@ -29,8 +45,8 @@ export function initVideo({ getState, getCode, getPhone, notice }) {
       throw new Error(result.error || "No se pudo completar la operación.");
     return result;
   }
-  const query = (extra = "") =>
-    `code=${encodeURIComponent(getCode())}${extra}`;
+  const query = (extra = "", code = getCode()) =>
+    `code=${encodeURIComponent(code)}${extra}`;
   function plan() {
     const { settings, photos } = getState();
     return videoPlan({
@@ -63,7 +79,13 @@ export function initVideo({ getState, getCode, getPhone, notice }) {
     $("#video-photos-field").hidden = settings.videoMode === "clip";
     $("#photo-seconds-output").textContent = `${settings.photoSeconds} s`;
     showFile("video", "Ningún video cargado");
-    showFile("music", "Sin música: el video saldrá sin sonido");
+    showFile(
+      "music",
+      media.defaultMusic
+        ? `Música predeterminada: ${media.defaultMusic.name} · ${clock(media.defaultMusic.duration)}`
+        : "Sin música: el video saldrá sin sonido",
+    );
+    $("#music-volume-output").textContent = `${settings.musicVolume}%`;
     const { segments, total } = plan();
     $("#video-summary").textContent = problem
       ? problem
@@ -86,6 +108,8 @@ export function initVideo({ getState, getCode, getPhone, notice }) {
         $("#video-player").src = source;
       $("#video-download").href = `${source}&download=1`;
       $("#video-download").download = `${getCode()}.mp4`;
+      $("#video-save-folder").hidden =
+        !desktop?.saveVideo && typeof window.showDirectoryPicker !== "function";
     } else {
       $("#video-player").removeAttribute("src");
       $("#video-player").load();
@@ -93,13 +117,8 @@ export function initVideo({ getState, getCode, getPhone, notice }) {
   }
   function render() {
     if ($("#video-workspace").hidden) return;
-    renderVideoCover($("#video-cover-preview"), getState(), 640);
-    renderVideoClosing(
-      $("#video-closing-preview"),
-      getState(),
-      getPhone(),
-      640,
-    );
+    renderVideoCover($("#video-cover-preview"), scene(), 640);
+    renderVideoClosing($("#video-closing-preview"), scene(), getPhone(), 640);
     update();
   }
   async function refresh() {
@@ -121,8 +140,10 @@ export function initVideo({ getState, getCode, getPhone, notice }) {
     busy = false;
     media = await api(`media?${query()}`);
     render();
-    if (job.status === "done") notice("Tu video está listo.");
-    else if (job.status === "canceled") notice("Generación cancelada.");
+    if (job.status === "done") {
+      if (desktop?.saveVideo) await saveToFolder();
+      else notice("Tu video está listo.");
+    } else if (job.status === "canceled") notice("Generación cancelada.");
     else if (job.status === "error") notice(job.error, true);
   }
   async function poll() {
@@ -140,6 +161,29 @@ export function initVideo({ getState, getCode, getPhone, notice }) {
       update();
     }
   }
+  async function saveToFolder() {
+    try {
+      if (desktop?.saveVideo) {
+        const result = await desktop.saveVideo({ code: getCode() });
+        if (result.canceled)
+          return notice("El video está listo, pero no se guardó en la carpeta.");
+        if (result.error) throw new Error(result.error);
+        exportDestination.show(result.destination);
+        return notice(`Video guardado en ${result.file}.`, false, true);
+      }
+      const parent = await exportDestination.prepare();
+      const response = await fetch(`/api/video/final?${query()}`);
+      if (!response.ok) throw new Error("Genera el video primero.");
+      const file = await saveBrowserVideo(
+        parent,
+        getCode(),
+        await response.blob(),
+      );
+      notice(`Video guardado en ${file}.`, false, true);
+    } catch (error) {
+      if (error.name !== "AbortError") notice(error.message, true);
+    }
+  }
   function capture(draw, type) {
     const canvas = document.createElement("canvas");
     draw(canvas);
@@ -152,8 +196,8 @@ export function initVideo({ getState, getCode, getPhone, notice }) {
     $("#video-progress-label").textContent = "Preparando escenas…";
     update();
     try {
-      await loadPieceFonts();
-      const state = getState(),
+      await Promise.all([loadPieceFonts(), logoReady]);
+      const state = scene(),
         { settings, photos } = state,
         background = settings.videoColor;
       const slides =
@@ -174,6 +218,7 @@ export function initVideo({ getState, getCode, getPhone, notice }) {
           code: getCode(),
           mode: settings.videoMode,
           photoSeconds: settings.photoSeconds,
+          musicVolume: settings.musicVolume,
           background,
           slides,
           cover: capture(
@@ -192,6 +237,19 @@ export function initVideo({ getState, getCode, getPhone, notice }) {
       notice(error.message, true);
       update();
     }
+  }
+  async function refreshDefaultMusic() {
+    try {
+      showDefaultMusic((await api(`media?${query("", BRAND)}`)).defaultMusic);
+    } catch (error) {
+      notice(error.message, true);
+    }
+  }
+  function showDefaultMusic(music) {
+    media.defaultMusic = music;
+    $("#default-music-name").textContent =
+      `${music.name} · ${clock(music.duration)}${music.builtIn ? " (incluida)" : ""}`;
+    $("#default-music-remove").hidden = !!music.builtIn;
   }
   async function send(kind, file) {
     if (!file || busy) return;
@@ -242,6 +300,34 @@ export function initVideo({ getState, getCode, getPhone, notice }) {
       }
     });
   }
+  $("#default-music-input").addEventListener("change", async (event) => {
+    const [file] = event.target.files;
+    event.target.value = "";
+    if (!file) return;
+    $("#default-music-name").textContent = `Cargando ${file.name}…`;
+    try {
+      const result = await api(
+        `media?${query(`&kind=music&name=${encodeURIComponent(file.name)}`, BRAND)}`,
+        { method: "PUT", body: file },
+      );
+      showDefaultMusic(result.defaultMusic);
+      notice("Música predeterminada guardada en este equipo.");
+    } catch (error) {
+      notice(error.message, true);
+      refreshDefaultMusic();
+    }
+  });
+  $("#default-music-remove").addEventListener("click", async () => {
+    try {
+      const result = await api(`media?${query("&kind=music", BRAND)}`, {
+        method: "DELETE",
+      });
+      showDefaultMusic(result.defaultMusic);
+    } catch (error) {
+      notice(error.message, true);
+    }
+  });
+  $("#video-save-folder").addEventListener("click", saveToFolder);
   $("#generate-video").addEventListener("click", generate);
   $("#cancel-video").addEventListener("click", () =>
     api("cancel", { method: "POST" }).catch((error) =>
@@ -257,5 +343,7 @@ export function initVideo({ getState, getCode, getPhone, notice }) {
     $("#show-video").setAttribute("aria-pressed", "true");
     refresh();
   });
-  return { render, isBusy: () => busy };
+  logoReady.then(render, () => notice("No se pudo cargar el logo.", true));
+  refreshDefaultMusic();
+  return { render, refreshDefaultMusic, isBusy: () => busy };
 }
