@@ -152,7 +152,7 @@ export function openProjectDatabase(directory) {
     },
   };
 }
-async function readJson(req) {
+export async function readJson(req) {
   if (!/^application\/json(?:;|$)/i.test(req.headers["content-type"] || ""))
     throw new ApiError(415, "Se requiere JSON.");
   let size = 0;

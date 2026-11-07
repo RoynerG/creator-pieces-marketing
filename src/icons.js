@@ -14,6 +14,8 @@ const paths = {
     '<rect x="5" y="2" width="14" height="20" rx="2"/><path d="M8 6h8M8 18h8"/>',
   bed: '<path d="M3 18v3m18-3v3M3 10V5h18v5M2 18v-6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v6ZM6 10V7h4v3m4 0V7h4v3"/>',
   bath: '<path d="M3 12h18M4 12v4a4 4 0 0 0 4 4h8a4 4 0 0 0 4-4v-4M6 20v2m12-2v2M5 12V4a2 2 0 0 1 4 0v1"/>',
+  video:
+    '<rect x="3" y="5" width="13" height="14" rx="2"/><path d="m16 10 5-3v10l-5-3"/>',
   spark:
     '<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5ZM20 2v4m-2-2h4"/>',
   arrow: '<path d="M5 12h14m-5-5 5 5-5 5"/>',

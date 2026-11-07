@@ -1,6 +1,6 @@
 import { WIDTH, HEIGHT, containRect, coverRect } from "./model.js";
 
-function fitText(
+export function fitText(
   ctx,
   text,
   x,
@@ -72,7 +72,7 @@ function placeholder(ctx, x, y, w, h, color) {
     color,
   );
 }
-function bed(ctx, x, y, color) {
+export function bed(ctx, x, y, color) {
   ctx.save();
   ctx.translate(x, y);
   ctx.strokeStyle = color;
@@ -98,7 +98,7 @@ function bed(ctx, x, y, color) {
   ctx.stroke();
   ctx.restore();
 }
-function bath(ctx, x, y, color) {
+export function bath(ctx, x, y, color) {
   ctx.save();
   ctx.translate(x, y);
   ctx.strokeStyle = color;
@@ -129,7 +129,7 @@ function bath(ctx, x, y, color) {
   ctx.stroke();
   ctx.restore();
 }
-function areaIcon(ctx, x, y, color) {
+export function areaIcon(ctx, x, y, color) {
   ctx.save();
   ctx.translate(x, y);
   ctx.strokeStyle = color;

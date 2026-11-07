@@ -13,6 +13,8 @@ files:
   - src/export-files.js
   - package.json
 asar: true
+asarUnpack:
+  - node_modules/ffmpeg-static/**/*
 npmRebuild: false
 win:
   target:

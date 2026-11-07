@@ -11,6 +11,8 @@ set "PIEZAS_INSTALL_DEPS="
 if not exist node_modules\vite\bin\vite.js set "PIEZAS_INSTALL_DEPS=1"
 if not exist node_modules\@fontsource\poppins\latin-200.css set "PIEZAS_INSTALL_DEPS=1"
 if not exist node_modules\@fontsource\montserrat\latin-700.css set "PIEZAS_INSTALL_DEPS=1"
+if not exist node_modules\@fontsource\raleway\latin-900.css set "PIEZAS_INSTALL_DEPS=1"
+if not exist node_modules\ffmpeg-static\ffmpeg.exe set "PIEZAS_INSTALL_DEPS=1"
 if defined PIEZAS_INSTALL_DEPS (
   echo Instalando dependencias y tipografias...
   call npm ci

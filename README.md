@@ -27,7 +27,7 @@ npm run dev
 
 Se abre en `http://127.0.0.1:5173`. Mantén el servidor abierto. La versión instalada usa un servidor incorporado en `127.0.0.1:17838` y comparte la base de datos de este usuario con la versión de desarrollo. Ambas escuchan solo en el equipo local.
 
-Después de instalar, el editor de imágenes funciona sin Internet ni servicios de pago. MiniMax requiere Internet y una clave Coding Plan. Las fuentes vienen incluidas.
+Después de instalar, el editor de imágenes y el creador de videos funcionan sin Internet ni servicios de pago. MiniMax requiere Internet y una clave Coding Plan. Las fuentes vienen incluidas.
 
 ## Inicio y configuración
 
@@ -77,6 +77,23 @@ Solo se envía texto a MiniMax al generar o ajustar. Las fotografías no se env�
 
 La integración utiliza el [endpoint oficial compatible con OpenAI de MiniMax](https://platform.minimax.io/docs/api-reference/text-openai-api) desde el servidor local. No acepta claves de pago por uso ni cambia automáticamente de modalidad. El generador funciona dentro de la app instalada o con `npm run dev` / `npm run preview`; un alojamiento de archivos estáticos por sí solo no ejecuta la integración.
 
+## Crear videos
+
+En cada publicación, **Crear video** genera un MP4 vertical de **1080 × 1920 px (9:16)** a 30 fotogramas por segundo, listo para reels e historias. El video se monta en tu equipo, sin Internet ni servicios de pago.
+
+1. Prepara la publicación como siempre: datos, fotos y logo. La primera foto se usa de fondo en la portada.
+2. Elige qué mostrar después de la portada: **Solo fotos**, **Solo video del inmueble** o **Video y luego fotos**.
+3. Si usas video, carga el recorrido del inmueble (MP4, MOV, M4V, WebM o MKV, hasta 4 GB). Se usa completo y sin su sonido. Un video horizontal se recorta para llenar la pantalla. Los videos de iPhone, incluidos HEVC y HDR, se convierten automáticamente.
+4. Opcionalmente, carga la música (MP3, M4A, AAC, WAV u OGG, hasta 200 MB). Suena en todo el video, se repite si es corta y baja suavemente en el último segundo. Sin música, el video sale sin sonido. Usa solo música que tengas derecho a publicar.
+5. En **Pantalla final** ajusta el mensaje, Instagram, sitio web y color de fondo. El teléfono se toma de **Crear descripción → Tu contacto y marca**.
+6. Pulsa **Generar video**. Al terminar puedes reproducirlo y usar **Descargar video**, que guarda `12238.mp4`.
+
+La portada dura 4 s y la pantalla final 3,9 s. Cada foto dura lo indicado en **Tiempo por foto** (4 s por defecto), y todas las escenas cambian con la misma transición vertical de 0,5 s.
+
+El video de origen, la música y el último MP4 generado se guardan por código en `%APPDATA%Piezas Estudiomedia<código>`, no en SQLite. Los archivos `.piezas` conservan los ajustes del video, pero no esos archivos: en otro equipo hay que volver a cargarlos.
+
+La aplicación incluye [FFmpeg](https://ffmpeg.org) (licencia GPL), que añade unos 80 MB a la instalación.
+
 ## Guardar y retomar
 
 - Cada publicación (fotos, logo, datos, ficha y descripción redactada) se guarda automáticamente por código en **SQLite**, en `%APPDATA%\Piezas Estudio\publicaciones.sqlite`. El botón **Carpeta de datos** abre esa ubicación. Si otra ventana modifica el mismo código, se bloquea la escritura obsoleta para evitar sobrescribirla: guarda una copia `.piezas` y recarga.
@@ -124,6 +141,8 @@ El instalador queda en `release/`. No incluye `.local/`, bases SQLite ni fotos d
 - `src/styles.css`: diseño adaptable del editor.
 - `src/descriptions.js` y `src/descriptions.css`: generador, edición y acciones de texto.
 - `src/caption-model.js`: datos portables de la descripción, sin credenciales.
+- `src/video.js`, `src/video.css` y `src/video-render.js`: pantalla de video, portada y pantalla final 9:16.
+- `server/video.js`: archivos del video y montaje con FFmpeg.
 - `src/publications.js`, `src/publications.css` y `src/publications-store.js`: listado, biblioteca de fotos y guardado por código.
 - `server/library.js`: lectura de la carpeta local y configuración de su ruta.
 - `server/captions.js` y `server/minimax.js`: integración local, formato y configuración de MiniMax.
@@ -134,4 +153,4 @@ El instalador queda en `release/`. No incluye `.local/`, bases SQLite ni fotos d
 - `vite.config.js`: integración del servidor y bloqueo del directorio privado.
 - `tests/model.test.js`: pruebas con el runner nativo de Node.
 
-Tecnologías: JavaScript, Canvas 2D, SQLite, Electron, Vite y fflate. Servidor local Node.js incorporado; sin base de datos remota.
+Tecnologías: JavaScript, Canvas 2D, SQLite, Electron, Vite, fflate y FFmpeg. Servidor local Node.js incorporado; sin base de datos remota.

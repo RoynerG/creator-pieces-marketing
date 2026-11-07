@@ -2,6 +2,11 @@ import { normalizeDescription } from "./caption-model.js";
 export const WIDTH = 1080;
 export const HEIGHT = 1350;
 export const MAX_PHOTOS = 10;
+export const VIDEO_WIDTH = 1080;
+export const VIDEO_HEIGHT = 1920;
+export const VIDEO_TRANSITION_SECONDS = 0.5;
+const VIDEO_COVER_SECONDS = 4;
+const VIDEO_CLOSING_SECONDS = 3.9;
 export const defaults = {
   operation: "EN VENTA",
   propertyType: "Apartamento",
@@ -15,6 +20,12 @@ export const defaults = {
   secondary: "#8b9098",
   logoSize: 120,
   logoPosition: "right",
+  videoMode: "photos",
+  photoSeconds: 4,
+  videoColor: "#081121",
+  closingMessage: "Contáctanos para ofrecerte la casa de tus sueños",
+  instagram: "@goctgrealstate",
+  website: "www.gocartagenarealestate.com",
 };
 const clamp = (n, min, max) => Math.min(max, Math.max(min, n));
 export function containRect(iw, ih, tw, th) {
@@ -57,14 +68,18 @@ function numeric(value, max) {
 }
 export function normalizeSettings(input = {}) {
   const settings = { ...defaults };
-  for (const key of ["location", "reference", "propertyType"])
-    settings[key] = String(input[key] ?? defaults[key]).slice(
-      0,
-      key === "reference" ? 24 : 60,
-    );
+  for (const [key, max] of Object.entries({
+    location: 60,
+    reference: 24,
+    propertyType: 60,
+    closingMessage: 120,
+    instagram: 60,
+    website: 60,
+  }))
+    settings[key] = String(input[key] ?? defaults[key]).slice(0, max);
   settings.operation =
     input.operation === "EN ARRIENDO" ? "EN ARRIENDO" : "EN VENTA";
-  for (const key of ["navy", "accent", "secondary"])
+  for (const key of ["navy", "accent", "secondary", "videoColor"])
     if (/^#[0-9a-f]{6}$/i.test(input[key])) settings[key] = input[key];
   for (const key of ["bedrooms", "bathrooms", "area"])
     settings[key] = numeric(
@@ -73,7 +88,31 @@ export function normalizeSettings(input = {}) {
     );
   settings.logoSize = clamp(Number(input.logoSize) || 120, 60, 200);
   settings.logoPosition = input.logoPosition === "left" ? "left" : "right";
+  settings.videoMode = ["photos", "clip", "both"].includes(input.videoMode)
+    ? input.videoMode
+    : defaults.videoMode;
+  settings.photoSeconds = clamp(
+    Number(input.photoSeconds) || defaults.photoSeconds,
+    2,
+    8,
+  );
   return settings;
+}
+// Each segment overlaps the next during the transition, so a photo shown for
+// N seconds is followed by its successor exactly N seconds later.
+export function videoPlan({ mode, photos, clipSeconds = 0, photoSeconds }) {
+  const overlap = VIDEO_TRANSITION_SECONDS;
+  const segments = [{ kind: "cover", seconds: VIDEO_COVER_SECONDS + overlap }];
+  if (mode !== "photos" && clipSeconds > 0)
+    segments.push({ kind: "clip", seconds: clipSeconds });
+  if (mode !== "clip")
+    for (let index = 1; index < photos; index++)
+      segments.push({ kind: "photo", index, seconds: photoSeconds + overlap });
+  segments.push({ kind: "closing", seconds: VIDEO_CLOSING_SECONDS + overlap });
+  const total =
+    segments.reduce((sum, segment) => sum + segment.seconds, 0) -
+    overlap * (segments.length - 1);
+  return { segments, total };
 }
 export function validateProject(data) {
   if (

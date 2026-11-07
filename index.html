@@ -330,6 +330,14 @@
           >
             <i data-icon="spark"></i> Crear descripción
           </button>
+          <button
+            type="button"
+            id="show-video"
+            aria-pressed="false"
+            aria-controls="video-workspace"
+          >
+            <i data-icon="video"></i> Crear video
+          </button>
         </nav>
         <div id="pieces-workspace">
           <section class="page-heading">
@@ -734,6 +742,197 @@
             </section>
           </div>
         </div>
+        <section id="video-workspace" hidden aria-label="Creador de video">
+          <div class="page-heading">
+            <div>
+              <div class="eyebrow">TU INMUEBLE EN MOVIMIENTO</div>
+              <h1>Portada, recorrido y cierre.</h1>
+              <p>Un video vertical listo para reels e historias.</p>
+            </div>
+            <div class="format-badge">
+              <i data-icon="frame"></i
+              ><span
+                ><strong>1080 × 1920 px</strong
+                ><small>Formato 9:16 · MP4</small></span
+              >
+            </div>
+          </div>
+          <div class="description-grid">
+            <section
+              class="description-input-card"
+              aria-label="Contenido del video"
+            >
+              <div class="panel-title">
+                <span class="step-number">01</span>
+                <h2>Arma tu video</h2>
+              </div>
+              <div class="description-fields">
+                <label for="video-mode">Qué mostrar después de la portada</label
+                ><select id="video-mode" data-field="videoMode">
+                  <option value="photos">Solo fotos</option>
+                  <option value="clip">Solo video del inmueble</option>
+                  <option value="both">Video y luego fotos</option>
+                </select>
+                <div id="video-clip-field">
+                  <label class="dropzone" for="video-video-input"
+                    ><i data-icon="upload"></i
+                    ><strong>Video del inmueble</strong
+                    ><span>Arrástralo aquí o haz clic para elegirlo</span
+                    ><small>MP4, MOV, M4V, WebM o MKV · Máx. 4 GB</small></label
+                  ><input
+                    class="sr-only"
+                    id="video-video-input"
+                    type="file"
+                    accept="video/*,.mov,.mkv"
+                  />
+                  <div class="video-file">
+                    <span id="video-video-name"></span
+                    ><button
+                      type="button"
+                      id="video-video-remove"
+                      class="text-button"
+                      hidden
+                    >
+                      Quitar
+                    </button>
+                  </div>
+                  <p class="helper">
+                    Mejor si es vertical. Se usa completo y sin su sonido; un
+                    video horizontal se recorta para llenar la pantalla.
+                  </p>
+                </div>
+                <div id="video-photos-field">
+                  <label for="photo-seconds"
+                    >Tiempo por foto:
+                    <output id="photo-seconds-output">4 s</output></label
+                  ><input
+                    id="photo-seconds"
+                    data-field="photoSeconds"
+                    type="range"
+                    min="2"
+                    max="8"
+                    step="0.5"
+                  />
+                  <p class="helper">
+                    Se usan tus fotos en el orden de la publicación. La primera
+                    va en la portada.
+                  </p>
+                </div>
+                <label class="dropzone" for="video-music-input"
+                  ><i data-icon="upload"></i><strong>Música</strong
+                  ><span>Arrástrala aquí o haz clic para elegirla</span
+                  ><small>MP3, M4A, AAC, WAV u OGG · Máx. 200 MB</small></label
+                ><input
+                  class="sr-only"
+                  id="video-music-input"
+                  type="file"
+                  accept="audio/*,.m4a"
+                />
+                <div class="video-file">
+                  <span id="video-music-name"></span
+                  ><button
+                    type="button"
+                    id="video-music-remove"
+                    class="text-button"
+                    hidden
+                  >
+                    Quitar
+                  </button>
+                </div>
+                <p class="helper">
+                  Suena en todo el video, se repite si es corta y baja suave al
+                  final.
+                </p>
+                <details class="contact-settings">
+                  <summary>Pantalla final</summary>
+                  <label for="closing-message">Mensaje</label
+                  ><input
+                    id="closing-message"
+                    data-field="closingMessage"
+                    maxlength="120"
+                  />
+                  <label for="closing-instagram">Instagram</label
+                  ><input
+                    id="closing-instagram"
+                    data-field="instagram"
+                    maxlength="60"
+                  />
+                  <label for="closing-website">Sitio web</label
+                  ><input
+                    id="closing-website"
+                    data-field="website"
+                    maxlength="60"
+                  />
+                  <label for="video-color">Color de fondo</label
+                  ><input
+                    id="video-color"
+                    data-field="videoColor"
+                    type="color"
+                  />
+                  <p class="helper">
+                    El teléfono se toma de Crear descripción → Tu contacto y
+                    marca.
+                  </p>
+                </details>
+                <div class="video-actions">
+                  <p id="video-summary" role="status"></p>
+                  <div id="video-progress" hidden>
+                    <span id="video-progress-label"></span>
+                    <progress id="video-progress-bar" max="1"></progress>
+                  </div>
+                  <button
+                    type="button"
+                    id="generate-video"
+                    class="button yellow"
+                  >
+                    <i data-icon="video"></i> <span>Generar video</span>
+                  </button>
+                  <button
+                    type="button"
+                    id="cancel-video"
+                    class="button outline"
+                    hidden
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </section>
+            <section
+              class="video-preview-card"
+              aria-label="Vista previa del video"
+            >
+              <div class="panel-title">
+                <span class="step-number">02</span>
+                <h2>Vista previa</h2>
+              </div>
+              <div class="video-scenes">
+                <figure>
+                  <canvas
+                    id="video-cover-preview"
+                    role="img"
+                    aria-label="Portada del video"
+                  ></canvas>
+                  <figcaption>Portada</figcaption>
+                </figure>
+                <figure>
+                  <canvas
+                    id="video-closing-preview"
+                    role="img"
+                    aria-label="Pantalla final del video"
+                  ></canvas>
+                  <figcaption>Pantalla final</figcaption>
+                </figure>
+              </div>
+              <div id="video-result" hidden>
+                <video id="video-player" controls preload="metadata"></video>
+                <a id="video-download" class="button yellow">
+                  <i data-icon="download"></i> Descargar video
+                </a>
+              </div>
+            </section>
+          </div>
+        </section>
         <section
           id="description-workspace"
           hidden

@@ -4,6 +4,7 @@ import path from "node:path";
 import { createMiniMaxMiddleware, assertLocalRequest } from "./minimax.js";
 import { createLibraryMiddleware } from "./library.js";
 import { openProjectDatabase, createProjectsMiddleware } from "./projects.js";
+import { createVideoMiddleware } from "./video.js";
 const types = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
@@ -16,10 +17,12 @@ const types = {
 };
 export async function startDesktopServer({ directory, dist, port = 17838 }) {
   const store = openProjectDatabase(directory);
+  const video = createVideoMiddleware({ root: directory });
   const middleware = [
     createProjectsMiddleware(store),
     createMiniMaxMiddleware({ root: directory }),
     createLibraryMiddleware({ root: directory }),
+    video,
   ];
   const server = createServer(async (req, res) => {
     try {
@@ -88,6 +91,7 @@ export async function startDesktopServer({ directory, dist, port = 17838 }) {
     store,
     url: `http://127.0.0.1:${server.address().port}`,
     async close() {
+      video.stop();
       server.closeAllConnections();
       await new Promise((resolve) => server.close(resolve));
       store.close();

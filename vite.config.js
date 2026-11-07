@@ -7,6 +7,7 @@ import {
   openProjectDatabase,
   createProjectsMiddleware,
 } from "./server/projects.js";
+import { createVideoMiddleware } from "./server/video.js";
 const root = fileURLToPath(new URL(".", import.meta.url));
 async function setup(server) {
   const directory = dataDirectory();
@@ -15,7 +16,12 @@ async function setup(server) {
   server.middlewares.use(createProjectsMiddleware(store));
   server.middlewares.use(createMiniMaxMiddleware({ root: directory }));
   server.middlewares.use(createLibraryMiddleware({ root: directory }));
-  server.httpServer?.once("close", () => store.close());
+  const video = createVideoMiddleware({ root: directory });
+  server.middlewares.use(video);
+  server.httpServer?.once("close", () => {
+    video.stop();
+    store.close();
+  });
 }
 export default defineConfig({
   server: {

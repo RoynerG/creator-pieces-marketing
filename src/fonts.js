@@ -3,6 +3,8 @@ import "@fontsource/poppins/latin-400.css";
 import "@fontsource/poppins/latin-700.css";
 import "@fontsource/montserrat/latin-500.css";
 import "@fontsource/montserrat/latin-700.css";
+import "@fontsource/raleway/latin-300.css";
+import "@fontsource/raleway/latin-900.css";
 
 // Canvas must measure and paint with the actual local fonts, including on a cold start.
 let loading;
@@ -14,6 +16,8 @@ export function loadPieceFonts() {
       '700 66.667px "Poppins"',
       '500 28px "Montserrat"',
       '700 40px "Montserrat"',
+      '300 46px "Raleway"',
+      '900 92px "Raleway"',
     ].map(async (font) => {
       const faces = await document.fonts.load(
         font,

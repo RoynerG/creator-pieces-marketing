@@ -113,6 +113,8 @@ export function initDescriptions({ getProperty, onChange, notice }) {
   function showWorkspace(description) {
     $("#pieces-workspace").hidden = description;
     $("#description-workspace").hidden = !description;
+    $("#video-workspace").hidden = true;
+    $("#show-video").setAttribute("aria-pressed", "false");
     $("#show-description").setAttribute("aria-pressed", String(description));
     $("#show-pieces").setAttribute("aria-pressed", String(!description));
     if (description) refreshConfig();

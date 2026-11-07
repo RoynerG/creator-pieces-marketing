@@ -23,6 +23,7 @@ import {
 import { renderPiece } from "./render.js";
 import { loadPieceFonts } from "./fonts.js";
 import { initDescriptions } from "./descriptions.js";
+import { initVideo } from "./video.js";
 import {
   createPublicationStore,
   migrateBrowserProjects,
@@ -63,6 +64,12 @@ const descriptions = initDescriptions({
   onChange: () => changed(),
   notice,
 });
+const video = initVideo({
+  getState: () => state,
+  getCode: () => activeCode,
+  getPhone: () => descriptions.get().phone,
+  notice,
+});
 const publications = initPublications({
   getStore: () => publicationStore,
   getActive: () => activeCode,
@@ -78,7 +85,7 @@ const publications = initPublications({
 
 const navigation = initNavigation({
   beforeLeave: async () => {
-    if (busy || descriptions.isBusy()) {
+    if (busy || descriptions.isBusy() || video.isBusy()) {
       notice("Espera a que termine la operación antes de cambiar de sección.");
       return false;
     }
@@ -312,10 +319,17 @@ async function openPublication(code, reuseDraft = false, imported = null) {
     )
       return false;
     const branding = Object.fromEntries(
-      ["navy", "accent", "secondary", "logoSize", "logoPosition"].map((key) => [
-        key,
-        state.settings[key],
-      ]),
+      [
+        "navy",
+        "accent",
+        "secondary",
+        "logoSize",
+        "logoPosition",
+        "videoColor",
+        "closingMessage",
+        "instagram",
+        "website",
+      ].map((key) => [key, state.settings[key]]),
     );
     const next =
       imported ||
@@ -497,6 +511,7 @@ function render() {
     button.setAttribute("aria-pressed", String(selected === i));
     renderPiece(button.querySelector("canvas"), state, i, 135);
   });
+  video.render();
 }
 function updatePhotoList() {
   const list = $("#photo-list");
