@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { descriptionDefaults } from "../src/caption-model.js";
+import { MAIN_BARRIOS, OTHER_BARRIOS, searchBarrios } from "../src/barrios.js";
 import {
   containRect,
   coverRect,
@@ -10,6 +11,23 @@ import {
   validateProject,
   defaults,
 } from "../src/model.js";
+
+test("neighborhood search ignores accents and ranks names by their start", () => {
+  assert.deepEqual(searchBarrios("getsemani"), ["Getsemaní"]);
+  assert.deepEqual(searchBarrios("  CAMAGUEY "), ["Camagüey"]);
+  const results = searchBarrios("bosque");
+  assert.equal(results[0], "Bosquecito");
+  assert.ok(results.includes("El Bosque"));
+  assert.deepEqual(searchBarrios("xyz"), []);
+});
+
+test("Cartagena neighborhoods are unique and fit the cover field", () => {
+  const all = [...MAIN_BARRIOS, ...OTHER_BARRIOS];
+  assert.equal(new Set(all).size, all.length);
+  assert.ok(all.every((name) => name.length <= 60));
+  for (const name of ["Bocagrande", "Manga", "Crespo", "Getsemaní"])
+    assert.ok(MAIN_BARRIOS.includes(name), name);
+});
 
 test("portrait framing keeps image geometry and reaches each edge without gaps", () => {
   for (const [iw, ih] of [

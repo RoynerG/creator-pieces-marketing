@@ -36,6 +36,9 @@
         </button>
       </nav>
       <div class="header-actions">
+        <button id="install-update" type="button" class="button navy" hidden>
+          Reiniciar y actualizar
+        </button>
         <button class="button quiet" id="new-project" type="button">
           Nueva publicación</button
         ><button class="button outline" id="save-project" type="button" hidden>
@@ -232,8 +235,8 @@
             <button class="button outline" data-action="import">
               Abrir archivo .piezas</button
             ><button
+              id="open-data-folder"
               class="button outline"
-              data-proxy="open-data-folder"
               data-desktop-only
               hidden
             >
@@ -248,9 +251,8 @@
               actualizaciones.
             </p>
             <button
-              id="settings-check-updates"
+              id="check-updates"
               class="button outline"
-              data-proxy="check-updates"
               data-desktop-only
               hidden
             >
@@ -355,19 +357,19 @@
           </button>
           <button
             type="button"
-            id="show-description"
-            aria-pressed="false"
-            aria-controls="description-workspace"
-          >
-            <i data-icon="spark"></i> Crear descripción
-          </button>
-          <button
-            type="button"
             id="show-video"
             aria-pressed="false"
             aria-controls="video-workspace"
           >
             <i data-icon="video"></i> Crear video
+          </button>
+          <button
+            type="button"
+            id="show-description"
+            aria-pressed="false"
+            aria-controls="description-workspace"
+          >
+            <i data-icon="spark"></i> Crear descripción
           </button>
         </nav>
         <div id="pieces-workspace">
@@ -485,12 +487,24 @@
                   <option>Bodega</option>
                 </select>
                 <label for="location">Barrio o ubicación</label
-                ><input
-                  id="location"
-                  data-field="location"
-                  placeholder="Ej. Manga, Cartagena"
-                  maxlength="60"
-                />
+                ><div class="location-picker">
+                  <input
+                    id="location"
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-controls="location-list"
+                    aria-expanded="false"
+                    autocomplete="off"
+                    placeholder="Busca un barrio"
+                    maxlength="60"
+                  />
+                  <ul
+                    id="location-list"
+                    role="listbox"
+                    aria-label="Barrios de Cartagena"
+                    hidden
+                  ></ul>
+                </div>
                 <label for="reference">Código del inmueble</label>
                 <div class="input-prefix">
                   <span>#</span
@@ -1199,17 +1213,6 @@
         </div>
       </footer>
     </main>
-    <div id="desktop-status" class="desktop-status" hidden>
-      <span id="desktop-version"></span
-      ><span id="desktop-update-message" role="status"></span
-      ><button id="check-updates" type="button" class="text-button">
-        Buscar actualizaciones</button
-      ><button id="open-data-folder" type="button" class="text-button">
-        Carpeta de datos</button
-      ><button id="install-update" type="button" class="button navy" hidden>
-        Reiniciar y actualizar
-      </button>
-    </div>
     <div
       id="notice"
       class="notice"

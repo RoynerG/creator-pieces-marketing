@@ -2,31 +2,6 @@
   font-family: Studio;
   src: local("Aptos"), local("Segoe UI");
 }
-.desktop-status {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  flex-wrap: wrap;
-  padding: 14px 4.2%;
-  border-top: 1px solid #dbe2ec;
-  background: #fff;
-  color: #4c607d;
-  font-size: 12px;
-}
-.desktop-status #desktop-update-message {
-  margin-right: auto;
-}
-.desktop-app {
-  padding-bottom: 90px;
-}
-.desktop-app .desktop-status {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  z-index: 80;
-  box-shadow: 0 -4px 20px #071d3f08;
-}
 * {
   box-sizing: border-box;
 }
@@ -828,12 +803,55 @@ output {
   color: #8d99aa;
   font-weight: 400;
 }
+.location-picker {
+  position: relative;
+}
+#location-list {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 260px;
+  margin: 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  border: 1px solid #dfe4ec;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 28px #071d3f26;
+}
+#location-list [role="option"] {
+  padding: 8px 10px;
+  border-radius: 5px;
+  font-size: 13px;
+  color: #24344e;
+  cursor: pointer;
+}
+#location-list [role="option"]:hover,
+#location-list [role="option"].active {
+  background: #eef2f7;
+}
+#location-list [aria-selected="true"] {
+  font-weight: 600;
+}
+.location-heading {
+  padding: 8px 10px 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #7a8799;
+}
 .notice {
   position: fixed;
   bottom: 24px;
   left: 50%;
   transform: translateX(-50%);
-  z-index: 10;
+  z-index: 100;
+  cursor: pointer;
+  overflow-wrap: anywhere;
   background: #0a284b;
   color: #fff;
   padding: 14px 22px;

@@ -34,6 +34,7 @@ import { initPublications } from "./publications.js";
 import { initDesktop } from "./desktop.js";
 import { initNavigation } from "./navigation.js";
 import { icon, fillIcons } from "./icons.js";
+import { initLocationPicker } from "./location-picker.js";
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -58,6 +59,12 @@ let publicationStore,
   saveError,
   legacyDraft;
 fillIcons();
+const locationPicker = initLocationPicker({
+  onChange: (location) => {
+    state.settings = normalizeSettings({ ...state.settings, location });
+    changed();
+  },
+});
 const exportDestination = initExportDestination({ notice });
 const descriptions = initDescriptions({
   getProperty: () => state.settings,
@@ -412,6 +419,7 @@ function syncControls() {
   $$("[data-field]").forEach((input) => {
     input.value = state.settings[input.dataset.field];
   });
+  locationPicker.set(state.settings.location);
   $("#logo-size-output").textContent = `${state.settings.logoSize} px`;
   $("#remove-logo").hidden = !state.logo;
   $("#logo-swatch").replaceChildren();
@@ -659,6 +667,9 @@ $$("[data-field]").forEach((input) =>
     changed();
   }),
 );
+$("#notice").addEventListener("click", () => {
+  $("#notice").hidden = true;
+});
 $("#previous").addEventListener("click", () => selectPiece(selected - 1));
 $("#next").addEventListener("click", () => selectPiece(selected + 1));
 for (const axis of ["x", "y"]) {

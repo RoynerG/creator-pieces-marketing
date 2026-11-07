@@ -14,7 +14,7 @@ El instalador todavía no tiene certificado de firma de código; Windows puede m
 
 Cada push a `main` ejecuta `.github/workflows/windows-release.yml`: instala dependencias, pasa las pruebas, compila y publica una GitHub Release con instalador, checksum y metadatos `latest.yml`. Las versiones son `1.1.<número de ejecución>`; no hay que subir ejecutables al código fuente. GitHub Actions debe estar habilitado y permitir al workflow escribir Releases (`contents: write`, ya declarado).
 
-La app instalada busca actualizaciones al abrir y cada cuatro horas. Descarga una versión más nueva en segundo plano y muestra **Reiniciar y actualizar**. Ese botón guarda el trabajo, crea una copia de SQLite en `backups/` y aplica la actualización. No interrumpe una edición para reiniciar por su cuenta. También puedes pulsar **Buscar actualizaciones**. Sin conexión puedes continuar trabajando; un push solo llega a los equipos cuando termina correctamente la publicación de la Release. Cambiar un archivo sin subirlo no distribuye una actualización.
+La app instalada busca actualizaciones al abrir y cada cuatro horas. Descarga una versión más nueva en segundo plano y muestra **Reiniciar y actualizar**. Ese botón guarda el trabajo, crea una copia de SQLite en `backups/` y aplica la actualización. No interrumpe una edición para reiniciar por su cuenta. También puedes pulsar **Configuración → Buscar actualizaciones**. Sin conexión puedes continuar trabajando; un push solo llega a los equipos cuando termina correctamente la publicación de la Release. Cambiar un archivo sin subirlo no distribuye una actualización.
 
 ## Desarrollo o uso desde el navegador
 
@@ -46,7 +46,7 @@ La pantalla **Inicio** ofrece seis accesos grandes: **Nueva publicación**, **Mi
 
 ## Crear las piezas
 
-1. Crea o abre una publicación por código. Completa negocio (venta/arriendo), tipo de inmueble, ubicación, habitaciones, baños y área. Deja un dato numérico vacío para ocultarlo en la portada.
+1. Crea o abre una publicación por código. Completa negocio (venta/arriendo), tipo de inmueble, barrio, habitaciones, baños y área. El barrio se busca en la lista de Cartagena (`src/barrios.js`), sin importar las tildes; para otro lugar, escríbelo y elige **Usar “…”**. Deja un dato numérico vacío para ocultarlo en la portada.
 2. En **Fotografías**, carga hasta 10 archivos JPG, PNG o WebP (25 MB por archivo). La primera foto es la portada. Para obtener diez piezas, carga diez fotos.
 3. Usa las flechas para ordenar y las miniaturas para revisar. Las fotografías interiores llenan el formato vertical 4:5 mediante escalado proporcional y recorte, sin estirarse ni añadir franjas. Selecciona una miniatura y usa **Encuadre horizontal / vertical** para elegir la parte visible, o **Centrar foto** para restablecerla. No se añade un zoom manual. El encuadre se guarda por foto, incluso al reordenar o exportar/importar el proyecto. La portada conserva su plantilla vertical y el ajuste completo de su foto.
 4. En **Tu marca**, carga el logo y ajusta colores, tamaño y posición. En la portada el logo se mantiene en la franja derecha, con un tamaño máximo de 170 px; en las fotos puede ir a izquierda o derecha.
@@ -96,7 +96,7 @@ La aplicación incluye [FFmpeg](https://ffmpeg.org) (licencia GPL), que añade u
 
 ## Guardar y retomar
 
-- Cada publicación (fotos, logo, datos, ficha y descripción redactada) se guarda automáticamente por código en **SQLite**, en `%APPDATA%\Piezas Estudio\publicaciones.sqlite`. El botón **Carpeta de datos** abre esa ubicación. Si otra ventana modifica el mismo código, se bloquea la escritura obsoleta para evitar sobrescribirla: guarda una copia `.piezas` y recarga.
+- Cada publicación (fotos, logo, datos, ficha y descripción redactada) se guarda automáticamente por código en **SQLite**, en `%APPDATA%\Piezas Estudio\publicaciones.sqlite`. **Configuración → Abrir carpeta de datos** abre esa ubicación. Si otra ventana modifica el mismo código, se bloquea la escritura obsoleta para evitar sobrescribirla: guarda una copia `.piezas` y recarga.
 - **Guardar proyecto** descarga un archivo `.piezas` con todo el proyecto. **Abrir proyecto guardado** permite retomarlo en otro navegador/equipo. Tamaño máximo de importación: 150 MB.
 - Al abrir la versión nueva en el navegador anterior y en la misma dirección (`127.0.0.1:5173`), sus publicaciones IndexedDB se copian a SQLite una sola vez por código. No se borran las copias anteriores ni se reemplazan publicaciones ya guardadas en SQLite. Haz esto antes de cerrar definitivamente la versión del navegador; alternativamente, importa sus archivos `.piezas` en la app instalada. La configuración local anterior se copia al iniciar Vite.
 - El borrador anterior se migra a una publicación si ya tiene un código válido. Si no, se conserva una copia recuperable mediante **Guardar borrador anterior por código**. Los archivos `.piezas` anteriores siguen siendo compatibles; necesitan un código válido al importarlos. Importar un código existente pide confirmar su reemplazo.
