@@ -184,7 +184,31 @@
           <section class="settings-card">
             <h2><i data-icon="video"></i> Música de los videos</h2>
             <p>
-              Esta canción suena en todos los videos que no tengan una propia.
+              Organiza tus canciones en subcarpetas por estilo, por ejemplo
+              Tropical, Playas, Romántico y Alegre. Si la carpeta está en
+              OneDrive, estará en todos tus equipos. No se sube a GitHub.
+            </p>
+            <form id="music-library-form">
+              <label for="music-library-path">Carpeta de música</label>
+              <div class="library-path-row">
+                <input
+                  id="music-library-path"
+                  placeholder="C:\Users\TuUsuario\OneDrive\...\Musica"
+                /><button
+                  id="choose-music-folder"
+                  class="button outline"
+                  type="button"
+                  hidden
+                >
+                  Elegir carpeta</button
+                ><button class="button navy" type="submit">
+                  Conectar carpeta
+                </button>
+              </div>
+            </form>
+            <p id="music-library-status" class="helper" role="status"></p>
+            <p>
+              Esta canción suena en los videos donde no elijas otra.
             </p>
             <label class="dropzone" for="default-music-input"
               ><i data-icon="upload"></i><strong>Música predeterminada</strong
@@ -919,8 +943,22 @@
                     Sorpresa: distintas en cada video
                   </option>
                 </select>
+                <label for="video-music-choice">Música</label
+                ><select id="video-music-choice" data-field="musicChoice"></select>
+                <div class="video-file">
+                  <span id="video-music-choice-note"></span
+                  ><button
+                    type="button"
+                    id="video-music-listen"
+                    class="text-button"
+                    hidden
+                  >
+                    Escuchar
+                  </button>
+                </div>
                 <label class="dropzone" for="video-music-input"
-                  ><i data-icon="upload"></i><strong>Música</strong
+                  ><i data-icon="upload"></i
+                  ><strong>Otra canción solo para este inmueble</strong
                   ><span>Arrástrala aquí o haz clic para elegirla</span
                   ><small>MP3, M4A, AAC, WAV u OGG · Máx. 200 MB</small></label
                 ><input
@@ -952,9 +990,9 @@
                   step="5"
                 />
                 <p class="helper">
-                  Sin archivo, usa la música predeterminada de Configuración.
-                  Suena en todo el video, se repite si es corta y baja suave al
-                  final.
+                  Elige una canción de tu carpeta de música, o un estilo para
+                  que cada video use una distinta. Suena en todo el video, se
+                  repite si es corta y baja suave al final.
                 </p>
                 <details class="contact-settings">
                   <summary>Pantalla final</summary>

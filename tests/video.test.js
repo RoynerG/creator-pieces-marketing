@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
@@ -484,4 +484,75 @@ test("extra video photos can be added, reordered, removed and rendered", async (
     })
   ).json();
   assert.equal(state.photos.length, 0);
+});
+
+test("songs come from the music folder by style without leaving it", async (t) => {
+  const { dir, url } = await server(t);
+  const music = path.join(dir, "Musica");
+  for (const style of ["Tropical", "Romántico", "Vacía"])
+    await mkdir(path.join(music, style), { recursive: true });
+  const song = (file) =>
+    generate(
+      path.join(music, file),
+      "-f",
+      "lavfi",
+      "-i",
+      "sine=frequency=440:duration=2",
+    );
+  await song(path.join("Tropical", "Sol.m4a"));
+  await song(path.join("Romántico", "Luna.m4a"));
+  await writeFile(path.join(music, "Tropical", "notas.txt"), "x");
+  const outside = await song("../fuera.m4a");
+  const setFolder = (directory) =>
+    fetch(`${url}/api/video/music-library`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ directory }),
+    });
+  assert.equal((await setFolder("relativa")).status, 400);
+  const library = await (await setFolder(music)).json();
+  assert.deepEqual(library.styles, [
+    { name: "Romántico", songs: ["Luna.m4a"] },
+    { name: "Tropical", songs: ["Sol.m4a"] },
+  ]);
+  const preview = await fetch(
+    `${url}/api/video/library-song?choice=${encodeURIComponent("song:Romántico/Luna.m4a")}`,
+  );
+  assert.equal(preview.headers.get("content-type"), "audio/mp4");
+  for (const choice of [
+    "song:Tropical/../../fuera.m4a",
+    `song:${outside}`,
+    "song:Tropical/notas.txt",
+  ])
+    assert.equal(
+      (
+        await fetch(
+          `${url}/api/video/library-song?choice=${encodeURIComponent(choice)}`,
+        )
+      ).status,
+      400,
+      choice,
+    );
+  const cover = await dataUrl(dir, "cover.png", "white");
+  const base = {
+    code: "7016",
+    mode: "photos",
+    background: "#051226",
+    cover,
+    closing: cover,
+    slides: [cover],
+  };
+  const random = await render(url, { ...base, musicChoice: "style:Tropical" });
+  assert.equal((await random.json()).song, "Sol");
+  assert.equal((await finished(url)).status, "done");
+  const chosen = await render(url, {
+    ...base,
+    musicChoice: "song:Romántico/Luna.m4a",
+  });
+  assert.equal((await chosen.json()).song, "Luna");
+  assert.equal((await finished(url)).status, "done");
+  assert.equal(
+    (await render(url, { ...base, musicChoice: "style:Vacía" })).status,
+    400,
+  );
 });

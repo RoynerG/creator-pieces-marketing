@@ -110,9 +110,10 @@ else {
         update: updateState,
       }));
       handle("piezas:check-updates", checkUpdates);
-      handle("piezas:choose-folder", async () => {
+      handle("piezas:choose-folder", async (title) => {
         const result = await dialog.showOpenDialog(window, {
-          title: "Selecciona la carpeta Fotos",
+          title:
+            typeof title === "string" ? title : "Selecciona la carpeta Fotos",
           properties: ["openDirectory"],
         });
         return result.canceled ? null : result.filePaths[0];

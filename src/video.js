@@ -39,6 +39,9 @@ export function initVideo({
       final: null,
     },
     shownPhotos = "",
+    library = { styles: [] },
+    lastSong = "",
+    preview,
     busy = false,
     uploading = false,
     polling;
@@ -103,6 +106,12 @@ export function initVideo({
         : "Sin música: el video saldrá sin sonido",
     );
     $("#music-volume-output").textContent = `${settings.musicVolume}%`;
+    $("#video-music-choice").disabled = busy || !!media.music;
+    $("#video-music-choice-note").textContent = media.music
+      ? "Se usará la canción subida para este inmueble."
+      : library.error || "";
+    $("#video-music-listen").hidden =
+      !!media.music || !settings.musicChoice.startsWith("song:");
     showPhotos();
     const { segments, total } = plan();
     $("#video-summary").textContent = problem
@@ -272,6 +281,43 @@ export function initVideo({
       !!errors.length,
     );
   }
+  function fillMusic() {
+    const select = $("#video-music-choice"),
+      current = getState().settings.musicChoice;
+    select.replaceChildren(
+      new Option(
+        `Predeterminada: ${media.defaultMusic?.name || "Real Estate.mp3"}`,
+        "",
+      ),
+    );
+    for (const style of library.styles) {
+      const group = document.createElement("optgroup");
+      group.label = style.name || "Sin estilo";
+      if (style.name)
+        group.append(new Option(`Al azar: ${style.name}`, `style:${style.name}`));
+      for (const song of style.songs)
+        group.append(
+          new Option(song.replace(/\.[^.]+$/, ""), `song:${style.name}/${song}`),
+        );
+      select.append(group);
+    }
+    if (current && ![...select.options].some((option) => option.value === current))
+      select.append(new Option("Canción no encontrada en la carpeta", current));
+    select.value = current;
+    const count = library.styles.reduce((sum, style) => sum + style.songs.length, 0);
+    $("#music-library-path").value ||= library.directory || "";
+    $("#music-library-status").textContent = library.error
+      ? library.error
+      : `${count} ${count === 1 ? "canción" : "canciones"} en ${library.styles.filter((style) => style.name).length} estilos · ${library.directory}`;
+  }
+  async function refreshMusicLibrary() {
+    try {
+      library = await api("music-library");
+    } catch (error) {
+      library = { styles: [], error: error.message };
+    }
+    fillMusic();
+  }
   function render() {
     if ($("#video-workspace").hidden) return;
     renderVideoCover($("#video-cover-preview"), scene(), 640);
@@ -282,6 +328,7 @@ export function initVideo({
     if (!getCode()) return;
     try {
       media = await api(`media?${query()}`);
+      await refreshMusicLibrary();
       const job = await api("status");
       if (job.status === "running" && job.code === getCode()) {
         busy = true;
@@ -299,7 +346,7 @@ export function initVideo({
     render();
     if (job.status === "done") {
       if (desktop?.saveVideo) await saveToFolder();
-      else notice("Tu video está listo.");
+      else notice(`Tu video está listo.${songNote()}`);
     } else if (job.status === "canceled") notice("Generación cancelada.");
     else if (job.status === "error") notice(job.error, true);
   }
@@ -326,7 +373,11 @@ export function initVideo({
           return notice("El video está listo, pero no se guardó en la carpeta.");
         if (result.error) throw new Error(result.error);
         exportDestination.show(result.destination);
-        return notice(`Video guardado en ${result.file}.`, false, true);
+        return notice(
+          `Video guardado en ${result.file}.${songNote()}`,
+          false,
+          true,
+        );
       }
       const parent = await exportDestination.prepare();
       const response = await fetch(`/api/video/final?${query()}`);
@@ -341,6 +392,7 @@ export function initVideo({
       if (error.name !== "AbortError") notice(error.message, true);
     }
   }
+  const songNote = () => (lastSong ? ` Música: ${lastSong}.` : "");
   function capture(draw, type) {
     const canvas = document.createElement("canvas");
     draw(canvas);
@@ -366,7 +418,7 @@ export function initVideo({
                 "image/jpeg",
               ),
             );
-      await api("render", {
+      const started = await api("render", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -375,6 +427,7 @@ export function initVideo({
           photoSeconds: settings.photoSeconds,
           musicVolume: settings.musicVolume,
           transitions: settings.videoTransitions,
+          musicChoice: settings.musicChoice,
           background,
           slides,
           cover: capture(
@@ -387,6 +440,7 @@ export function initVideo({
           ),
         }),
       });
+      lastSong = started.song;
       polling = setTimeout(poll, 300);
     } catch (error) {
       busy = false;
@@ -397,6 +451,7 @@ export function initVideo({
   async function refreshDefaultMusic() {
     try {
       showDefaultMusic((await api(`media?${query("", BRAND)}`)).defaultMusic);
+      await refreshMusicLibrary();
     } catch (error) {
       notice(error.message, true);
     }
@@ -501,6 +556,46 @@ export function initVideo({
   $("#video-photos-clear").addEventListener("click", () => {
     if (window.confirm("¿Quitar todas las fotos adicionales del video?"))
       changePhotos(`photo?${query("&id=all")}`, "DELETE");
+  });
+  $("#music-library-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const button = event.submitter;
+    button.disabled = true;
+    try {
+      library = await api("music-library", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ directory: $("#music-library-path").value }),
+      });
+      fillMusic();
+      notice("Carpeta de música conectada.");
+    } catch (error) {
+      $("#music-library-status").textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+  $("#video-music-listen").addEventListener("click", () => {
+    if (preview && !preview.paused) {
+      preview.pause();
+      $("#video-music-listen").textContent = "Escuchar";
+      return;
+    }
+    preview?.pause();
+    preview = new Audio(
+      `/api/video/library-song?choice=${encodeURIComponent(getState().settings.musicChoice)}`,
+    );
+    preview.addEventListener("ended", () => {
+      $("#video-music-listen").textContent = "Escuchar";
+    });
+    preview
+      .play()
+      .then(() => ($("#video-music-listen").textContent = "Detener"))
+      .catch(() => notice("No se pudo reproducir la canción.", true));
+  });
+  $("#video-music-choice").addEventListener("input", () => {
+    preview?.pause();
+    $("#video-music-listen").textContent = "Escuchar";
   });
   $("#video-save-folder").addEventListener("click", saveToFolder);
   $("#generate-video").addEventListener("click", generate);

@@ -52,6 +52,19 @@ export function initDesktop({ flush, notice }) {
       );
     }
   });
+  const chooseMusic = document.querySelector("#choose-music-folder");
+  chooseMusic.hidden = false;
+  chooseMusic.addEventListener("click", async () => {
+    const folder = await desktop.chooseFolder("Selecciona la carpeta de música");
+    if (folder) {
+      document.querySelector("#music-library-path").value = folder;
+      document
+        .querySelector("#music-library-form")
+        .requestSubmit(
+          document.querySelector("#music-library-form button[type=submit]"),
+        );
+    }
+  });
   const choose = document.querySelector("#choose-library-folder");
   choose.hidden = false;
   choose.addEventListener("click", async () => {

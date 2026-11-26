@@ -34,6 +34,7 @@ export const defaults = {
   musicVolume: 25,
   videoPhotos: "all",
   videoTransitions: "variada",
+  musicChoice: "",
   closingMessage: "Contáctanos para ofrecerte la casa de tus sueños",
   instagram: "@goctgrealstate",
   website: "www.gocartagenarealestate.com",
@@ -113,6 +114,11 @@ export function normalizeSettings(input = {}) {
     100,
   );
   settings.videoPhotos = input.videoPhotos === "extra" ? "extra" : "all";
+  settings.musicChoice =
+    typeof input.musicChoice === "string" &&
+    /^(style|song):/.test(input.musicChoice)
+      ? input.musicChoice.slice(0, 300)
+      : "";
   settings.videoTransitions = VIDEO_TRANSITION_STYLES.includes(
     input.videoTransitions,
   )

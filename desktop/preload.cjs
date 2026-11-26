@@ -3,7 +3,7 @@ contextBridge.exposeInMainWorld("piezasDesktop", {
   info: () => ipcRenderer.invoke("piezas:info"),
   checkUpdates: () => ipcRenderer.invoke("piezas:check-updates"),
   installUpdate: () => ipcRenderer.invoke("piezas:install-update"),
-  chooseFolder: () => ipcRenderer.invoke("piezas:choose-folder"),
+  chooseFolder: (title) => ipcRenderer.invoke("piezas:choose-folder", title),
   exportDestination: () => ipcRenderer.invoke("piezas:export-destination"),
   chooseExportDestination: () =>
     ipcRenderer.invoke("piezas:choose-export-destination"),

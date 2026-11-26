@@ -4,12 +4,15 @@ import { createReadStream, createWriteStream } from "node:fs";
 import {
   mkdir,
   mkdtemp,
+  readdir,
   readFile,
+  realpath,
   rename,
   rm,
   stat,
   writeFile,
 } from "node:fs/promises";
+import os from "node:os";
 import path from "node:path";
 import { Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
@@ -85,6 +88,13 @@ export function transitionsFor(style, random = Math.random) {
   return pool;
 }
 const PHOTO_ID = /^[0-9a-f]{16}$/;
+const AUDIO_TYPES = {
+  ".mp3": "audio/mpeg",
+  ".m4a": "audio/mp4",
+  ".aac": "audio/aac",
+  ".wav": "audio/wav",
+  ".ogg": "audio/ogg",
+};
 const PHOTO_BYTES = 15 * 1024 ** 2;
 // Not a valid publication code, so it can never collide with one.
 const BRAND = "_marca";
@@ -307,9 +317,110 @@ async function readMeta(file) {
     throw error;
   }
 }
-export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
+export function createVideoMiddleware({
+  root,
+  ffmpeg = ffmpegPath(),
+  musicDefault = path.join(
+    os.homedir(),
+    "OneDrive",
+    "Personales",
+    "Freelancer",
+    "Go",
+    "Musica",
+  ),
+}) {
   const mediaRoot = path.join(root, "media");
-  let job = null;
+  const musicConfig = path.join(root, ".local", "music-library.json");
+  let job = null,
+    musicDirectory = musicDefault;
+  const musicReady = readFile(musicConfig, "utf8")
+    .then((text) => {
+      const saved = JSON.parse(text);
+      if (
+        typeof saved.directory === "string" &&
+        path.isAbsolute(saved.directory)
+      )
+        musicDirectory = saved.directory;
+    })
+    .catch(() => {});
+  const songs = async (folder) =>
+    (await readdir(folder, { withFileTypes: true }))
+      .filter(
+        (entry) =>
+          entry.isFile() && AUDIO_TYPES[path.extname(entry.name).toLowerCase()],
+      )
+      .map((entry) => entry.name)
+      .sort((a, b) => a.localeCompare(b, "es", { numeric: true }));
+  // Each subfolder is a style; songs in the root folder have no style.
+  async function musicLibrary() {
+    await musicReady;
+    try {
+      const base = await realpath(musicDirectory),
+        styles = [],
+        loose = await songs(base);
+      if (loose.length) styles.push({ name: "", songs: loose });
+      const folders = (await readdir(base, { withFileTypes: true }))
+        .filter((entry) => entry.isDirectory())
+        .map((entry) => entry.name)
+        .sort((a, b) => a.localeCompare(b, "es"));
+      for (const name of folders) {
+        const list = await songs(path.join(base, name));
+        if (list.length) styles.push({ name, songs: list });
+      }
+      return { directory: musicDirectory, styles };
+    } catch (error) {
+      return {
+        directory: musicDirectory,
+        styles: [],
+        error:
+          error.code === "ENOENT"
+            ? "No se encontró la carpeta de música. Revisa la ruta en Configuración."
+            : "No se pudo leer la carpeta de música.",
+      };
+    }
+  }
+  // Choices only match names read from the folder, so they cannot escape it.
+  async function librarySong(choice, random = Math.random) {
+    const library = await musicLibrary();
+    if (library.error) throw new ApiError(400, library.error);
+    let style, song;
+    if (choice.startsWith("style:")) {
+      style = library.styles.find((item) => item.name === choice.slice(6));
+      song = style?.songs[Math.floor(random() * style.songs.length)];
+    } else if (choice.startsWith("song:")) {
+      const value = choice.slice(5),
+        slash = value.indexOf("/");
+      style = library.styles.find(
+        (item) => item.name === value.slice(0, slash),
+      );
+      song = style?.songs.find((name) => name === value.slice(slash + 1));
+    }
+    if (!song)
+      throw new ApiError(
+        400,
+        "No se encontró la canción elegida. Revisa la carpeta de música.",
+      );
+    return path.join(await realpath(musicDirectory), style.name, song);
+  }
+  async function setMusicDirectory(input) {
+    const candidate =
+      typeof input?.directory === "string"
+        ? input.directory.trim().replace(/^"|"$/g, "")
+        : "";
+    if (!path.isAbsolute(candidate))
+      throw new ApiError(400, "Introduce la ruta completa de la carpeta.");
+    let resolved;
+    try {
+      resolved = await realpath(candidate);
+      if (!(await stat(resolved)).isDirectory()) throw new Error();
+    } catch {
+      throw new ApiError(400, "La ruta debe ser una carpeta existente.");
+    }
+    await mkdir(path.dirname(musicConfig), { recursive: true });
+    await writeFile(musicConfig, JSON.stringify({ directory: resolved }));
+    musicDirectory = resolved;
+    return musicLibrary();
+  }
   const folder = (code) =>
     path.join(mediaRoot, code === BRAND ? BRAND : publicationFolder(code));
   const running = () => job?.status === "running";
@@ -449,6 +560,14 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
     const media = await status(code),
       withClip = input.mode === "clip" || input.mode === "both",
       extras = input.mode === "clip" ? [] : media.photos;
+    // A song uploaded for this property wins over the music folder choice.
+    const song = media.music
+      ? path.join(folder(code), media.music.file)
+      : input.musicChoice
+        ? await librarySong(String(input.musicChoice))
+        : media.defaultMusic.builtIn
+          ? builtInMusicFile()
+          : path.join(folder(BRAND), media.defaultMusic.file);
     if (withClip && !media.video)
       throw new ApiError(400, "Sube el video del inmueble primero.");
     const plan = videoPlan({
@@ -488,11 +607,6 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
         });
     }
     const output = path.join(temp, "final.mp4");
-    const song = media.music
-      ? path.join(folder(code), media.music.file)
-      : media.defaultMusic.builtIn
-        ? builtInMusicFile()
-        : path.join(folder(BRAND), media.defaultMusic.file);
     const { args, total } = videoArgs({
       segments,
       output,
@@ -551,7 +665,7 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
     };
     child.on("error", () => finish(1));
     child.on("close", finish);
-    return { total };
+    return { total, song: path.basename(song, path.extname(song)) };
   }
   async function sendFinal(req, res, code, download) {
     const file = finalFile(code),
@@ -617,6 +731,23 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
         res.writeHead(200, {
           "Content-Type": "image/jpeg",
           "Cache-Control": "private, max-age=31536000, immutable",
+          "X-Content-Type-Options": "nosniff",
+        });
+        return await pipeline(createReadStream(file), res);
+      }
+      if (route === "GET music-library")
+        return json(res, 200, await musicLibrary());
+      if (route === "POST music-library")
+        return json(res, 200, await setMusicDirectory(await readJson(req)));
+      if (route === "GET library-song") {
+        const choice = url.searchParams.get("choice") || "";
+        if (!choice.startsWith("song:"))
+          throw new ApiError(400, "Canción no válida.");
+        const file = await librarySong(choice);
+        res.writeHead(200, {
+          "Content-Type": AUDIO_TYPES[path.extname(file).toLowerCase()],
+          "Content-Length": (await stat(file)).size,
+          "Cache-Control": "no-store",
           "X-Content-Type-Options": "nosniff",
         });
         return await pipeline(createReadStream(file), res);
