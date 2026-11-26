@@ -88,7 +88,11 @@ En cada publicación, **Crear video** genera un MP4 vertical de **1080 × 1920 p
 5. En **Pantalla final** ajusta el mensaje, Instagram, sitio web y color de fondo. El teléfono se toma de **Crear descripción → Tu contacto y marca**.
 6. Pulsa **Generar video**. En la app de Windows se guarda solo en `<ubicación de guardado>\12238\video\12238.mp4`, junto a las imágenes de la publicación. El video anterior se conserva como `12238 - anterior.mp4`. En Chrome o Edge usa **Guardar en carpeta**. **Descargar video** guarda una copia donde elijas. Si reemplazas las imágenes, la carpeta `video` pasa a la carpeta nueva.
 
-La portada y la pantalla final usan el logo oficial incluido en `public/brand/logo.svg`. La portada dura 4 s y la pantalla final 3,9 s. Cada foto dura lo indicado en **Tiempo por foto** (4 s por defecto). Las transiciones duran 0,5 s y van variando a lo largo del video.
+Además de las fotos de la publicación, cada video admite hasta **50 fotos adicionales**: **Elegir de la carpeta del inmueble** (con **Seleccionar todas**) o **Añadir desde el equipo**. Se recortan a 9:16 al añadirlas, se pueden reordenar y quitar, y se guardan en `media\<código>\photos`. En **Fotos del recorrido** eliges si el video usa también las de la publicación o solo las adicionales; la primera foto de la publicación siempre va en la portada. Con muchas fotos, baja **Tiempo por foto** para acortar el video.
+
+**Transiciones** ofrece estilos: variadas, alegres y dinámicas, encantadoras y suaves, clásica (siempre hacia abajo) y sorpresa, que cambia en cada video.
+
+La portada y la pantalla final usan el logo oficial incluido en `public/brand/logo.svg`. La portada dura 4 s y la pantalla final 3,9 s. Cada foto dura lo indicado en **Tiempo por foto** (4 s por defecto). Las transiciones duran 0,5 s.
 
 El video de origen, la música y el último MP4 generado se guardan por código en `%APPDATA%Piezas Estudiomedia<código>`, no en SQLite. Los archivos `.piezas` conservan los ajustes del video, pero no esos archivos: en otro equipo hay que volver a cargarlos.
 

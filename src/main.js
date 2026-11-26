@@ -76,6 +76,7 @@ const video = initVideo({
   getCode: () => activeCode,
   getPhone: () => descriptions.get().phone,
   exportDestination,
+  browseLibrary: (target) => publications.browse(target),
   notice,
 });
 const publications = initPublications({

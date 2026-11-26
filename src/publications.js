@@ -16,7 +16,14 @@ export function initPublications({
     reuseDraft = false,
     selected = new Map(),
     available = [],
-    loading = false;
+    loading = false,
+    target;
+  const piecesTarget = {
+    capacity: () => 10 - getPhotoCount(),
+    hint: "La primera será la portada.",
+    add: importPhotos,
+    after: () => $("#tab-photos").click(),
+  };
   async function api(route, input) {
     const response = await fetch(
       `/api/library/${route}`,
@@ -210,7 +217,7 @@ export function initPublications({
     }
   });
   function updateSelection() {
-    const capacity = 10 - getPhotoCount();
+    const capacity = target.capacity();
     $("#library-selection-count").textContent =
       `${selected.size} seleccionadas · ${capacity} espacios disponibles`;
     $("#import-library-photos").disabled = !selected.size || loading;
@@ -218,7 +225,8 @@ export function initPublications({
       checkbox.disabled =
         loading || (!checkbox.checked && selected.size >= capacity);
   }
-  async function browsePhotos() {
+  async function browsePhotos(next = piecesTarget) {
+    target = next;
     selected = new Map();
     available = [];
     loading = false;
@@ -233,7 +241,7 @@ export function initPublications({
       );
       available = result.files;
       $("#photo-library-status").textContent = available.length
-        ? `${available.length} imágenes. Selecciona hasta ${10 - getPhotoCount()}. La primera será la portada.`
+        ? `${available.length} imágenes. Selecciona hasta ${target.capacity()}. ${target.hint}`
         : "Esta carpeta no contiene imágenes JPG, PNG o WebP.";
       for (const file of available) {
         const label = document.createElement("label");
@@ -265,7 +273,17 @@ export function initPublications({
         `${error.message} Puedes cambiar la ruta desde Configuración o cargar archivos manualmente.`;
     }
   }
-  $("#browse-property-photos").addEventListener("click", browsePhotos);
+  $("#browse-property-photos").addEventListener("click", () => browsePhotos());
+  $("#select-all-library-photos").addEventListener("click", () => {
+    for (const checkbox of $("#library-photo-list").querySelectorAll("input")) {
+      if (selected.size >= target.capacity()) break;
+      if (checkbox.checked) continue;
+      checkbox.checked = true;
+      const file = available.find((item) => item.name === checkbox.value);
+      selected.set(file.name, file);
+    }
+    updateSelection();
+  });
   $("#close-photo-library").addEventListener("click", () => {
     if (!loading) $("#photo-library-dialog").close();
   });
@@ -289,8 +307,8 @@ export function initPublications({
         files.push(new File([blob], file.name, { type: blob.type }));
       }
       $("#photo-library-dialog").close();
-      await importPhotos(files);
-      $("#tab-photos").click();
+      await target.add(files);
+      target.after?.();
     } catch (error) {
       $("#photo-library-status").textContent = error.message;
     } finally {
@@ -299,5 +317,5 @@ export function initPublications({
       updateSelection();
     }
   });
-  return { refresh, showEditor, showNew };
+  return { refresh, showEditor, showNew, browse: browsePhotos };
 }

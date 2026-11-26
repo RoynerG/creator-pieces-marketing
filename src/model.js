@@ -5,6 +5,14 @@ export const MAX_PHOTOS = 10;
 export const VIDEO_WIDTH = 1080;
 export const VIDEO_HEIGHT = 1920;
 export const VIDEO_TRANSITION_SECONDS = 0.5;
+export const VIDEO_EXTRA_PHOTOS = 50;
+export const VIDEO_TRANSITION_STYLES = [
+  "variada",
+  "alegre",
+  "encantadora",
+  "clasica",
+  "aleatoria",
+];
 const VIDEO_COVER_SECONDS = 4;
 const VIDEO_CLOSING_SECONDS = 3.9;
 export const defaults = {
@@ -24,6 +32,8 @@ export const defaults = {
   photoSeconds: 4,
   videoColor: "#051226",
   musicVolume: 25,
+  videoPhotos: "all",
+  videoTransitions: "variada",
   closingMessage: "Contáctanos para ofrecerte la casa de tus sueños",
   instagram: "@goctgrealstate",
   website: "www.gocartagenarealestate.com",
@@ -102,6 +112,12 @@ export function normalizeSettings(input = {}) {
     5,
     100,
   );
+  settings.videoPhotos = input.videoPhotos === "extra" ? "extra" : "all";
+  settings.videoTransitions = VIDEO_TRANSITION_STYLES.includes(
+    input.videoTransitions,
+  )
+    ? input.videoTransitions
+    : defaults.videoTransitions;
   return settings;
 }
 // Each segment overlaps the next during the transition, so a photo shown for

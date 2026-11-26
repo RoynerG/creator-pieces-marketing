@@ -86,6 +86,55 @@
 #video-result[hidden] {
   display: none;
 }
+.video-photo-actions {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.video-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+  margin-top: 8px;
+}
+.video-photo-grid:empty {
+  display: none;
+}
+.video-photo {
+  position: relative;
+  margin: 0;
+}
+.video-photo img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #edf0f5;
+}
+.video-photo-number {
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: #071d3fcc;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+}
+.video-photo-tools {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+.video-photo-tools .icon-button {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+}
 .video-result-actions {
   display: flex;
   flex-wrap: wrap;

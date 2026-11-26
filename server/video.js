@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { randomBytes } from "node:crypto";
 import { createReadStream, createWriteStream } from "node:fs";
 import {
   mkdir,
@@ -15,6 +16,7 @@ import { pipeline } from "node:stream/promises";
 import { fileURLToPath } from "node:url";
 import ffmpegStatic from "ffmpeg-static";
 import {
+  VIDEO_EXTRA_PHOTOS,
   VIDEO_HEIGHT,
   VIDEO_TRANSITION_SECONDS,
   VIDEO_WIDTH,
@@ -37,16 +39,53 @@ const CLOSING_FADE_SECONDS = 0.6;
 const MUSIC_FADE_SECONDS = 1;
 // Songs are leveled to this average first, so musicVolume means the same for all.
 const MUSIC_REFERENCE_DB = -14;
-const TRANSITIONS = [
-  "slidedown",
-  "slideleft",
-  "fade",
-  "slideup",
-  "circleopen",
-  "slideright",
-  "smoothleft",
-  "wipedown",
-];
+export const TRANSITION_STYLES = {
+  variada: [
+    "slidedown",
+    "slideleft",
+    "fade",
+    "slideup",
+    "circleopen",
+    "slideright",
+    "smoothleft",
+    "wipedown",
+  ],
+  alegre: [
+    "slideleft",
+    "zoomin",
+    "circleopen",
+    "slideup",
+    "coverright",
+    "radial",
+    "slideright",
+    "squeezev",
+    "coverleft",
+    "slidedown",
+  ],
+  encantadora: [
+    "fade",
+    "smoothleft",
+    "dissolve",
+    "smoothup",
+    "fadeslow",
+    "smoothright",
+    "circleopen",
+    "smoothdown",
+  ],
+  clasica: ["slidedown"],
+};
+// "aleatoria" draws from every style so each render looks different.
+export function transitionsFor(style, random = Math.random) {
+  if (TRANSITION_STYLES[style]) return TRANSITION_STYLES[style];
+  const pool = [...new Set(Object.values(TRANSITION_STYLES).flat())];
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool;
+}
+const PHOTO_ID = /^[0-9a-f]{16}$/;
+const PHOTO_BYTES = 15 * 1024 ** 2;
 // Not a valid publication code, so it can never collide with one.
 const BRAND = "_marca";
 const BUILT_IN_MUSIC = {
@@ -84,7 +123,12 @@ function publicationFolder(code) {
 export const ffmpegPath = () =>
   ffmpegStatic.replace("app.asar", "app.asar.unpacked");
 const seconds = (value) => Number(value.toFixed(3));
-export function videoArgs({ segments, music, output }) {
+export function videoArgs({
+  segments,
+  music,
+  output,
+  transitions = TRANSITION_STYLES.variada,
+}) {
   const inputs = [],
     filters = [],
     labels = [];
@@ -138,7 +182,7 @@ export function videoArgs({ segments, music, output }) {
   for (let i = 1; i < labels.length; i++) {
     elapsed += segments[i - 1].seconds - VIDEO_TRANSITION_SECONDS;
     filters.push(
-      `[${last}][${labels[i]}]xfade=transition=${TRANSITIONS[(i - 1) % TRANSITIONS.length]}:duration=${VIDEO_TRANSITION_SECONDS}:offset=${seconds(elapsed)}[x${i}]`,
+      `[${last}][${labels[i]}]xfade=transition=${transitions[(i - 1) % transitions.length]}:duration=${VIDEO_TRANSITION_SECONDS}:offset=${seconds(elapsed)}[x${i}]`,
     );
     last = `x${i}`;
   }
@@ -241,6 +285,20 @@ function json(res, status, data) {
   });
   res.end(JSON.stringify(data));
 }
+function limitBytes(max) {
+  let size = 0;
+  const limit = new Transform({
+    transform(chunk, _encoding, done) {
+      size += chunk.length;
+      done(
+        size > max ? new ApiError(413, "El archivo es demasiado grande.") : null,
+        chunk,
+      );
+    },
+  });
+  limit.size = () => size;
+  return limit;
+}
 async function readMeta(file) {
   try {
     return JSON.parse(await readFile(file, "utf8"));
@@ -257,6 +315,63 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
   const running = () => job?.status === "running";
   const metaFile = (code, kind) => path.join(folder(code), `${kind}.json`);
   const finalFile = (code) => path.join(folder(code), "final.mp4");
+  const photosFile = (code) => path.join(folder(code), "photos.json");
+  const photoFile = (code, id) => path.join(folder(code), "photos", `${id}.jpg`);
+  const readPhotos = async (code) => (await readMeta(photosFile(code))) || [];
+  const writePhotos = (code, list) =>
+    writeFile(photosFile(code), JSON.stringify(list));
+  async function addPhoto(req, code, name) {
+    const list = await readPhotos(code);
+    if (list.length >= VIDEO_EXTRA_PHOTOS)
+      throw new ApiError(
+        400,
+        `El video admite hasta ${VIDEO_EXTRA_PHOTOS} fotos adicionales.`,
+      );
+    await mkdir(path.join(folder(code), "photos"), { recursive: true });
+    const id = randomBytes(8).toString("hex"),
+      file = photoFile(code, id);
+    try {
+      await pipeline(req, limitBytes(PHOTO_BYTES), createWriteStream(file));
+      // The app prepares every photo as a 9:16 JPEG before uploading it.
+      if (!/Video: mjpeg.*\b1080x1920\b/.test((await probe(ffmpeg, file)).text))
+        throw new ApiError(
+          422,
+          "La foto no se preparó correctamente. Intenta de nuevo.",
+        );
+    } catch (error) {
+      await rm(file, { force: true });
+      throw error;
+    }
+    await writePhotos(code, [
+      ...list,
+      { id, name: path.basename(name).slice(0, 120) || "Foto" },
+    ]);
+  }
+  async function removePhotos(code, id) {
+    const list = await readPhotos(code),
+      removed = id === "all" ? list : list.filter((photo) => photo.id === id);
+    await writePhotos(
+      code,
+      list.filter((photo) => !removed.includes(photo)),
+    );
+    for (const photo of removed)
+      await rm(photoFile(code, photo.id), { force: true });
+  }
+  async function orderPhotos(code, ids) {
+    const list = await readPhotos(code),
+      byId = new Map(list.map((photo) => [photo.id, photo]));
+    if (
+      !Array.isArray(ids) ||
+      ids.length !== list.length ||
+      new Set(ids).size !== ids.length ||
+      !ids.every((id) => byId.has(id))
+    )
+      throw new ApiError(400, "El orden de las fotos no es válido.");
+    await writePhotos(
+      code,
+      ids.map((id) => byId.get(id)),
+    );
+  }
   async function removeMedia(code, kind) {
     const meta = await readMeta(metaFile(code, kind));
     if (!meta) return;
@@ -274,19 +389,8 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
       );
     await mkdir(folder(code), { recursive: true });
     const file = `${kind}${extension}`,
-      temp = path.join(folder(code), `${kind}.upload${extension}`);
-    let size = 0;
-    const limit = new Transform({
-      transform(chunk, _encoding, done) {
-        size += chunk.length;
-        done(
-          size > rule.maxBytes
-            ? new ApiError(413, "El archivo es demasiado grande.")
-            : null,
-          chunk,
-        );
-      },
-    });
+      temp = path.join(folder(code), `${kind}.upload${extension}`),
+      limit = limitBytes(rule.maxBytes);
     try {
       await pipeline(req, limit, createWriteStream(temp));
       const info = await probe(ffmpeg, temp);
@@ -299,7 +403,7 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
         JSON.stringify({
           name: path.basename(name).slice(0, 120),
           file,
-          size,
+          size: limit.size(),
           duration: info.duration,
           hdr: info.hdr,
         }),
@@ -319,6 +423,7 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
     return {
       video: await readMeta(metaFile(code, "video")),
       music: await readMeta(metaFile(code, "music")),
+      photos: await readPhotos(code),
       defaultMusic:
         (await readMeta(metaFile(BRAND, "music"))) || BUILT_IN_MUSIC,
       final,
@@ -342,12 +447,13 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
     )
       throw new ApiError(400, "Las imágenes del video no son válidas.");
     const media = await status(code),
-      withClip = input.mode === "clip" || input.mode === "both";
+      withClip = input.mode === "clip" || input.mode === "both",
+      extras = input.mode === "clip" ? [] : media.photos;
     if (withClip && !media.video)
       throw new ApiError(400, "Sube el video del inmueble primero.");
     const plan = videoPlan({
       mode: input.mode,
-      photos: slides.length + 1,
+      photos: slides.length + extras.length + 1,
       clipSeconds: withClip ? media.video.duration : 0,
       photoSeconds: Number(input.photoSeconds) || 4,
     });
@@ -369,7 +475,10 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
       else if (segment.kind === "photo")
         segments.push({
           ...segment,
-          file: await write(`${segment.index}.img`, slides[segment.index - 1]),
+          file:
+            segment.index <= slides.length
+              ? await write(`${segment.index}.img`, slides[segment.index - 1])
+              : photoFile(code, extras[segment.index - 1 - slides.length].id),
         });
       else
         segments.push({
@@ -387,6 +496,7 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
     const { args, total } = videoArgs({
       segments,
       output,
+      transitions: transitionsFor(input.transitions),
       music: {
         file: song,
         gain: await musicGain(
@@ -486,6 +596,30 @@ export function createVideoMiddleware({ root, ffmpeg = ffmpegPath() }) {
           await upload(req, code, kind, url.searchParams.get("name") || "");
         else if (MEDIA[kind]) await removeMedia(code, kind);
         return json(res, 200, await status(code));
+      }
+      if (["PUT photo", "DELETE photo", "POST photos"].includes(route)) {
+        if (running())
+          throw new ApiError(409, "Espera a que termine el video actual.");
+        publicationFolder(code);
+        if (req.method === "PUT")
+          await addPhoto(req, code, url.searchParams.get("name") || "");
+        else if (req.method === "DELETE")
+          await removePhotos(code, url.searchParams.get("id") || "");
+        else await orderPhotos(code, (await readJson(req)).ids);
+        return json(res, 200, await status(code));
+      }
+      if (route === "GET photo") {
+        const id = url.searchParams.get("id") || "";
+        if (!PHOTO_ID.test(id)) throw new ApiError(400, "Foto no válida.");
+        const file = photoFile(code, id);
+        await stat(file);
+        // Photo ids are never reused, so the browser can keep them cached.
+        res.writeHead(200, {
+          "Content-Type": "image/jpeg",
+          "Cache-Control": "private, max-age=31536000, immutable",
+          "X-Content-Type-Options": "nosniff",
+        });
+        return await pipeline(createReadStream(file), res);
       }
       if (route === "POST render")
         return json(res, 202, await startRender(await readJson(req)));

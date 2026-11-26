@@ -6,7 +6,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { promisify } from "node:util";
 import { startDesktopServer } from "../server/desktop-server.js";
-import { ffmpegPath, videoArgs } from "../server/video.js";
+import {
+  TRANSITION_STYLES,
+  ffmpegPath,
+  transitionsFor,
+  videoArgs,
+} from "../server/video.js";
 import {
   defaults,
   normalizeSettings,
@@ -390,4 +395,93 @@ test("a render can be canceled without replacing the last finished video", async
     await fetch(`${url}/api/video/media?code=7016`)
   ).json();
   assert.equal(state.final, null);
+});
+
+test("every transition style uses transitions this FFmpeg supports", async () => {
+  const { stdout } = await run(ffmpeg, ["-hide_banner", "-h", "filter=xfade"]);
+  const supported = new Set(
+    [...stdout.matchAll(/^ {5}(\w+)\s+-?\d+/gm)].map((match) => match[1]),
+  );
+  for (const [style, names] of Object.entries(TRANSITION_STYLES))
+    for (const name of names)
+      assert.ok(supported.has(name), `${style}: ${name}`);
+  const surprise = transitionsFor("aleatoria", () => 0.5);
+  assert.equal(
+    new Set(surprise).size,
+    new Set(Object.values(TRANSITION_STYLES).flat()).size,
+  );
+  assert.deepEqual(transitionsFor("clasica"), ["slidedown"]);
+});
+
+test("extra video photos can be added, reordered, removed and rendered", async (t) => {
+  const { dir, url } = await server(t);
+  const photo = (name, size = "1080x1920") =>
+    generate(
+      path.join(dir, name),
+      "-f",
+      "lavfi",
+      "-i",
+      `color=c=red:s=${size}`,
+      "-frames:v",
+      "1",
+    );
+  const add = async (file) =>
+    fetch(`${url}/api/video/photo?code=7016&name=${path.basename(file)}`, {
+      method: "PUT",
+      body: await readFile(file),
+    });
+  for (const name of ["a.jpg", "b.jpg", "c.jpg"])
+    assert.equal((await add(await photo(name))).status, 200);
+  assert.equal((await add(await photo("small.jpg", "720x1280"))).status, 422);
+  let state = await (await fetch(`${url}/api/video/media?code=7016`)).json();
+  assert.deepEqual(
+    state.photos.map((item) => item.name),
+    ["a.jpg", "b.jpg", "c.jpg"],
+  );
+  const [a, b, c] = state.photos.map((item) => item.id);
+  const order = (ids) =>
+    fetch(`${url}/api/video/photos?code=7016`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids }),
+    });
+  assert.equal((await order([c, a])).status, 400);
+  assert.equal((await order([c, a, a])).status, 400);
+  state = await (await order([c, a, b])).json();
+  assert.deepEqual(
+    state.photos.map((item) => item.name),
+    ["c.jpg", "a.jpg", "b.jpg"],
+  );
+  const image = await fetch(`${url}/api/video/photo?code=7016&id=${c}`);
+  assert.equal(image.headers.get("content-type"), "image/jpeg");
+  assert.equal(
+    (await fetch(`${url}/api/video/photo?code=7016&id=..%2Fx`)).status,
+    400,
+  );
+  state = await (
+    await fetch(`${url}/api/video/photo?code=7016&id=${b}`, {
+      method: "DELETE",
+    })
+  ).json();
+  assert.equal(state.photos.length, 2);
+  const cover = await dataUrl(dir, "cover.png", "white");
+  const started = await render(url, {
+    code: "7016",
+    mode: "photos",
+    photoSeconds: 2,
+    transitions: "alegre",
+    background: "#051226",
+    cover,
+    closing: cover,
+    slides: [cover],
+  });
+  const { total } = await started.json();
+  assert.equal(total, 4 + 2 + 2 + 2 + 4.4);
+  assert.equal((await finished(url)).status, "done");
+  state = await (
+    await fetch(`${url}/api/video/photo?code=7016&id=all`, {
+      method: "DELETE",
+    })
+  ).json();
+  assert.equal(state.photos.length, 0);
 });

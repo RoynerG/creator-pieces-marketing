@@ -858,11 +858,67 @@
                     max="8"
                     step="0.5"
                   />
+                  <label for="video-photos-source">Fotos del recorrido</label
+                  ><select id="video-photos-source" data-field="videoPhotos">
+                    <option value="all">
+                      Las de la publicación y las adicionales
+                    </option>
+                    <option value="extra">Solo las fotos adicionales</option>
+                  </select>
                   <p class="helper">
-                    Se usan tus fotos en el orden de la publicación. La primera
-                    va en la portada.
+                    La primera foto de la publicación siempre va en la portada.
+                    Las adicionales van después, en este orden.
                   </p>
+                  <div class="video-photo-actions">
+                    <button
+                      type="button"
+                      id="video-browse-photos"
+                      class="button outline"
+                    >
+                      <i data-icon="folder"></i> Elegir de la carpeta del
+                      inmueble</button
+                    ><button
+                      type="button"
+                      id="video-add-photos"
+                      class="button outline"
+                    >
+                      <i data-icon="upload"></i> Añadir desde el equipo
+                    </button>
+                  </div>
+                  <input
+                    class="sr-only"
+                    id="video-photos-input"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                  />
+                  <div class="video-file">
+                    <span id="video-photo-count"></span
+                    ><button
+                      type="button"
+                      id="video-photos-clear"
+                      class="text-button"
+                      hidden
+                    >
+                      Quitar todas
+                    </button>
+                  </div>
+                  <div
+                    id="video-photo-list"
+                    class="video-photo-grid"
+                    aria-label="Fotos adicionales del video"
+                  ></div>
                 </div>
+                <label for="video-transitions">Transiciones</label
+                ><select id="video-transitions" data-field="videoTransitions">
+                  <option value="variada">Variadas</option>
+                  <option value="alegre">Alegres y dinámicas</option>
+                  <option value="encantadora">Encantadoras y suaves</option>
+                  <option value="clasica">Clásica: siempre hacia abajo</option>
+                  <option value="aleatoria">
+                    Sorpresa: distintas en cada video
+                  </option>
+                </select>
                 <label class="dropzone" for="video-music-input"
                   ><i data-icon="upload"></i><strong>Música</strong
                   ><span>Arrástrala aquí o haz clic para elegirla</span
@@ -1263,6 +1319,12 @@
       <div id="library-photo-list" class="library-photo-grid"></div>
       <div class="library-selection-bar">
         <span id="library-selection-count"></span
+        ><button
+          type="button"
+          id="select-all-library-photos"
+          class="button outline"
+        >
+          Seleccionar todas</button
         ><button
           type="button"
           id="import-library-photos"

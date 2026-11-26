@@ -1,5 +1,6 @@
 import "./video.css";
-import { videoPlan } from "./model.js";
+import { VIDEO_EXTRA_PHOTOS, videoPlan } from "./model.js";
+import { icon } from "./icons.js";
 import { saveBrowserVideo } from "./export-files.js";
 import { loadPieceFonts } from "./fonts.js";
 import {
@@ -24,12 +25,20 @@ export function initVideo({
   getCode,
   getPhone,
   exportDestination,
+  browseLibrary,
   notice,
 }) {
   const $ = (selector) => document.querySelector(selector);
   const desktop = window.piezasDesktop;
   const scene = () => ({ ...getState(), logoImage: logo });
-  let media = { video: null, music: null, defaultMusic: null, final: null },
+  let media = {
+      video: null,
+      music: null,
+      photos: [],
+      defaultMusic: null,
+      final: null,
+    },
+    shownPhotos = "",
     busy = false,
     uploading = false,
     polling;
@@ -47,11 +56,16 @@ export function initVideo({
   }
   const query = (extra = "", code = getCode()) =>
     `code=${encodeURIComponent(code)}${extra}`;
+  // The publication's first photo is always the cover; the rest are optional.
+  const pieceSlides = () =>
+    getState().settings.videoPhotos === "all"
+      ? getState().photos.slice(1)
+      : [];
   function plan() {
-    const { settings, photos } = getState();
+    const { settings } = getState();
     return videoPlan({
       mode: settings.videoMode,
-      photos: photos.length,
+      photos: 1 + pieceSlides().length + media.photos.length,
       clipSeconds: media.video?.duration || 0,
       photoSeconds: settings.photoSeconds,
     });
@@ -61,8 +75,11 @@ export function initVideo({
     if (!photos.length) return "Carga al menos una foto para la portada.";
     if (settings.videoMode !== "photos" && !media.video)
       return "Sube el video del inmueble.";
-    if (settings.videoMode !== "clip" && photos.length < 2)
-      return "Carga más fotos para el recorrido.";
+    if (
+      settings.videoMode !== "clip" &&
+      !plan().segments.some((segment) => segment.kind === "photo")
+    )
+      return "Añade fotos para el recorrido.";
     return "";
   }
   function showFile(kind, label) {
@@ -86,6 +103,7 @@ export function initVideo({
         : "Sin música: el video saldrá sin sonido",
     );
     $("#music-volume-output").textContent = `${settings.musicVolume}%`;
+    showPhotos();
     const { segments, total } = plan();
     $("#video-summary").textContent = problem
       ? problem
@@ -98,8 +116,12 @@ export function initVideo({
       "video-music-input",
       "video-video-remove",
       "video-music-remove",
+      "video-browse-photos",
+      "video-add-photos",
+      "video-photos-clear",
     ])
       $(`#${id}`).disabled = busy;
+    $("#video-photo-list").inert = busy;
     const ready = !!media.final && !busy;
     $("#video-result").hidden = !ready;
     if (ready) {
@@ -114,6 +136,141 @@ export function initVideo({
       $("#video-player").removeAttribute("src");
       $("#video-player").load();
     }
+  }
+  function showPhotos() {
+    const { photos } = media;
+    $("#video-photo-count").textContent = photos.length
+      ? `${photos.length} de ${VIDEO_EXTRA_PHOTOS} fotos adicionales`
+      : "Sin fotos adicionales";
+    $("#video-photos-clear").hidden = !photos.length;
+    const signature = photos.map((photo) => photo.id).join();
+    if (signature === shownPhotos) return;
+    shownPhotos = signature;
+    const list = $("#video-photo-list");
+    list.replaceChildren();
+    photos.forEach((photo, index) => {
+      const item = document.createElement("figure");
+      item.className = "video-photo";
+      const image = document.createElement("img");
+      image.src = `/api/video/photo?${query(`&id=${photo.id}`)}`;
+      image.alt = photo.name;
+      image.loading = "lazy";
+      const number = document.createElement("span");
+      number.className = "video-photo-number";
+      number.textContent = String(index + 1);
+      const tools = document.createElement("div");
+      tools.className = "video-photo-tools";
+      for (const [action, label] of [
+        ["chevron-left", "Mover antes"],
+        ["trash", "Quitar foto"],
+        ["chevron-right", "Mover después"],
+      ]) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "icon-button";
+        button.innerHTML = icon(action);
+        button.title = label;
+        button.setAttribute("aria-label", `${label} ${index + 1}`);
+        button.disabled =
+          (action === "chevron-left" && index === 0) ||
+          (action === "chevron-right" && index === photos.length - 1);
+        button.addEventListener("click", () =>
+          action === "trash"
+            ? changePhotos(`photo?${query(`&id=${photo.id}`)}`, "DELETE")
+            : movePhoto(index, action === "chevron-left" ? -1 : 1),
+        );
+        tools.append(button);
+      }
+      item.append(image, number, tools);
+      list.append(item);
+    });
+  }
+  async function changePhotos(route, method, body) {
+    if (busy) return;
+    try {
+      media = await api(route, {
+        method,
+        ...(body
+          ? {
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(body),
+            }
+          : {}),
+      });
+      render();
+    } catch (error) {
+      notice(error.message, true);
+    }
+  }
+  function movePhoto(index, step) {
+    const ids = media.photos.map((photo) => photo.id);
+    [ids[index], ids[index + step]] = [ids[index + step], ids[index]];
+    changePhotos(`photos?${query()}`, "POST", { ids });
+  }
+  // Browsers apply the photo's orientation, so phone pictures arrive upright.
+  async function preparePhoto(file) {
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type))
+      throw new Error("usa una imagen JPG, PNG o WebP.");
+    if (file.size > 25 * 1024 * 1024) throw new Error("supera los 25 MB.");
+    const url = URL.createObjectURL(file);
+    try {
+      const image = new Image();
+      image.src = url;
+      await image.decode();
+      const canvas = document.createElement("canvas");
+      renderVideoPhoto(canvas, { image }, getState().settings.videoColor);
+      return await new Promise((resolve, reject) =>
+        canvas.toBlob(
+          (blob) =>
+            blob
+              ? resolve(blob)
+              : reject(new Error("no se pudo preparar la imagen.")),
+          "image/jpeg",
+          0.9,
+        ),
+      );
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  }
+  async function addPhotos(files) {
+    if (busy || !files.length) return;
+    const room = VIDEO_EXTRA_PHOTOS - media.photos.length,
+      queue = files.slice(0, room),
+      errors = [];
+    if (!room)
+      return notice(
+        `Ya tienes ${VIDEO_EXTRA_PHOTOS} fotos adicionales. Quita alguna para añadir otras.`,
+        true,
+      );
+    busy = uploading = true;
+    update();
+    let added = 0;
+    try {
+      for (const [index, file] of queue.entries()) {
+        $("#video-progress-bar").value = index / queue.length;
+        $("#video-progress-label").textContent =
+          `Añadiendo foto ${index + 1} de ${queue.length}…`;
+        try {
+          media = await api(
+            `photo?${query(`&name=${encodeURIComponent(file.name)}`)}`,
+            { method: "PUT", body: await preparePhoto(file) },
+          );
+          added++;
+        } catch (error) {
+          errors.push(`“${file.name}”: ${error.message}`);
+        }
+      }
+    } finally {
+      busy = uploading = false;
+      render();
+    }
+    if (files.length > room)
+      errors.push(`Se alcanzó el máximo de ${VIDEO_EXTRA_PHOTOS} fotos.`);
+    notice(
+      `${added} ${added === 1 ? "foto añadida" : "fotos añadidas"} al video.${errors.length ? ` ${errors.join(" ")}` : ""}`,
+      !!errors.length,
+    );
   }
   function render() {
     if ($("#video-workspace").hidden) return;
@@ -203,14 +360,12 @@ export function initVideo({
       const slides =
         settings.videoMode === "clip"
           ? []
-          : photos
-              .slice(1)
-              .map((photo) =>
-                capture(
-                  (canvas) => renderVideoPhoto(canvas, photo, background),
-                  "image/jpeg",
-                ),
-              );
+          : pieceSlides().map((photo) =>
+              capture(
+                (canvas) => renderVideoPhoto(canvas, photo, background),
+                "image/jpeg",
+              ),
+            );
       await api("render", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -219,6 +374,7 @@ export function initVideo({
           mode: settings.videoMode,
           photoSeconds: settings.photoSeconds,
           musicVolume: settings.musicVolume,
+          transitions: settings.videoTransitions,
           background,
           slides,
           cover: capture(
@@ -326,6 +482,25 @@ export function initVideo({
     } catch (error) {
       notice(error.message, true);
     }
+  });
+  $("#video-browse-photos").addEventListener("click", () =>
+    browseLibrary({
+      capacity: () => VIDEO_EXTRA_PHOTOS - media.photos.length,
+      hint: "Se añaden al video en el orden en que las selecciones.",
+      add: addPhotos,
+    }),
+  );
+  $("#video-add-photos").addEventListener("click", () =>
+    $("#video-photos-input").click(),
+  );
+  $("#video-photos-input").addEventListener("change", (event) => {
+    const files = [...event.target.files];
+    event.target.value = "";
+    addPhotos(files);
+  });
+  $("#video-photos-clear").addEventListener("click", () => {
+    if (window.confirm("¿Quitar todas las fotos adicionales del video?"))
+      changePhotos(`photo?${query("&id=all")}`, "DELETE");
   });
   $("#video-save-folder").addEventListener("click", saveToFolder);
   $("#generate-video").addEventListener("click", generate);
