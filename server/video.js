@@ -402,6 +402,14 @@ export function createVideoMiddleware({
       );
     return path.join(await realpath(musicDirectory), style.name, song);
   }
+  // A song uploaded for this property wins over the music folder choice.
+  async function resolveSong(code, media, choice) {
+    if (media.music) return path.join(folder(code), media.music.file);
+    if (choice) return librarySong(String(choice));
+    return media.defaultMusic.builtIn
+      ? builtInMusicFile()
+      : path.join(folder(BRAND), media.defaultMusic.file);
+  }
   async function setMusicDirectory(input) {
     const candidate =
       typeof input?.directory === "string"
@@ -560,14 +568,7 @@ export function createVideoMiddleware({
     const media = await status(code),
       withClip = input.mode === "clip" || input.mode === "both",
       extras = input.mode === "clip" ? [] : media.photos;
-    // A song uploaded for this property wins over the music folder choice.
-    const song = media.music
-      ? path.join(folder(code), media.music.file)
-      : input.musicChoice
-        ? await librarySong(String(input.musicChoice))
-        : media.defaultMusic.builtIn
-          ? builtInMusicFile()
-          : path.join(folder(BRAND), media.defaultMusic.file);
+    const song = await resolveSong(code, media, input.musicChoice);
     if (withClip && !media.video)
       throw new ApiError(400, "Sube el video del inmueble primero.");
     const plan = videoPlan({
@@ -667,9 +668,8 @@ export function createVideoMiddleware({
     child.on("close", finish);
     return { total, song: path.basename(song, path.extname(song)) };
   }
-  async function sendFinal(req, res, code, download) {
-    const file = finalFile(code),
-      { size } = await stat(file);
+  async function sendFile(req, res, file, type, filename) {
+    const { size } = await stat(file);
     const range = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range || "");
     const start = range ? Number(range[1]) : 0,
       end = range?.[2] ? Math.min(Number(range[2]), size - 1) : size - 1;
@@ -679,13 +679,13 @@ export function createVideoMiddleware({
       return;
     }
     res.writeHead(range ? 206 : 200, {
-      "Content-Type": "video/mp4",
+      "Content-Type": type,
       "Content-Length": end - start + 1,
       "Accept-Ranges": "bytes",
       "Cache-Control": "no-store",
       "X-Content-Type-Options": "nosniff",
-      ...(download
-        ? { "Content-Disposition": `attachment; filename="${code}.mp4"` }
+      ...(filename
+        ? { "Content-Disposition": `attachment; filename="${filename}"` }
         : {}),
       ...(range ? { "Content-Range": `bytes ${start}-${end}/${size}` } : {}),
     });
@@ -739,18 +739,18 @@ export function createVideoMiddleware({
         return json(res, 200, await musicLibrary());
       if (route === "POST music-library")
         return json(res, 200, await setMusicDirectory(await readJson(req)));
-      if (route === "GET library-song") {
-        const choice = url.searchParams.get("choice") || "";
-        if (!choice.startsWith("song:"))
-          throw new ApiError(400, "Canción no válida.");
-        const file = await librarySong(choice);
-        res.writeHead(200, {
-          "Content-Type": AUDIO_TYPES[path.extname(file).toLowerCase()],
-          "Content-Length": (await stat(file)).size,
-          "Cache-Control": "no-store",
-          "X-Content-Type-Options": "nosniff",
-        });
-        return await pipeline(createReadStream(file), res);
+      if (route === "GET music-preview") {
+        const file = await resolveSong(
+          code,
+          await status(code),
+          url.searchParams.get("choice") || "",
+        );
+        return await sendFile(
+          req,
+          res,
+          file,
+          AUDIO_TYPES[path.extname(file).toLowerCase()] || "audio/mpeg",
+        );
       }
       if (route === "POST render")
         return json(res, 202, await startRender(await readJson(req)));
@@ -768,13 +768,16 @@ export function createVideoMiddleware({
         }
         return json(res, 200, { canceled: true });
       }
-      if (route === "GET final")
-        return await sendFinal(
+      if (route === "GET final") {
+        const name = publicationFolder(code);
+        return await sendFile(
           req,
           res,
-          publicationFolder(code),
-          url.searchParams.has("download"),
+          finalFile(name),
+          "video/mp4",
+          url.searchParams.has("download") && `${name}.mp4`,
         );
+      }
       throw new ApiError(404, "Ruta no encontrada.");
     } catch (error) {
       if (res.headersSent) return res.destroy();

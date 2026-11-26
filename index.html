@@ -946,16 +946,23 @@
                 <label for="video-music-choice">Música</label
                 ><select id="video-music-choice" data-field="musicChoice"></select>
                 <div class="video-file">
-                  <span id="video-music-choice-note"></span
+                  <span id="video-music-now"></span
                   ><button
                     type="button"
-                    id="video-music-listen"
+                    id="video-music-shuffle"
                     class="text-button"
                     hidden
                   >
-                    Escuchar
+                    Otra al azar
                   </button>
                 </div>
+                <audio
+                  id="video-music-player"
+                  controls
+                  preload="none"
+                  aria-label="Escuchar la canción del video"
+                ></audio>
+                <p id="video-music-choice-note" class="helper"></p>
                 <label class="dropzone" for="video-music-input"
                   ><i data-icon="upload"></i
                   ><strong>Otra canción solo para este inmueble</strong

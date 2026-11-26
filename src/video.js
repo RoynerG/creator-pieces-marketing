@@ -41,7 +41,7 @@ export function initVideo({
     shownPhotos = "",
     library = { styles: [] },
     lastSong = "",
-    preview,
+    picked = "",
     busy = false,
     uploading = false,
     polling;
@@ -99,19 +99,13 @@ export function initVideo({
     $("#video-photos-field").hidden = settings.videoMode === "clip";
     $("#photo-seconds-output").textContent = `${settings.photoSeconds} s`;
     showFile("video", "Ningún video cargado");
-    showFile(
-      "music",
-      media.defaultMusic
-        ? `Música predeterminada: ${media.defaultMusic.name} · ${clock(media.defaultMusic.duration)}`
-        : "Sin música: el video saldrá sin sonido",
-    );
+    showFile("music", "Ninguna canción subida para este inmueble");
     $("#music-volume-output").textContent = `${settings.musicVolume}%`;
     $("#video-music-choice").disabled = busy || !!media.music;
     $("#video-music-choice-note").textContent = media.music
       ? "Se usará la canción subida para este inmueble."
       : library.error || "";
-    $("#video-music-listen").hidden =
-      !!media.music || !settings.musicChoice.startsWith("song:");
+    showMusicPreview();
     showPhotos();
     const { segments, total } = plan();
     $("#video-summary").textContent = problem
@@ -281,6 +275,46 @@ export function initVideo({
       !!errors.length,
     );
   }
+  const songName = (choice) =>
+    choice.slice(choice.indexOf("/") + 1).replace(/\.[^.]+$/, "");
+  function pick(style) {
+    const songs = library.styles.find((item) => item.name === style)?.songs;
+    if (!songs?.length) return "";
+    const others = songs.filter((song) => `song:${style}/${song}` !== picked);
+    const list = others.length ? others : songs;
+    return `song:${style}/${list[Math.floor(Math.random() * list.length)]}`;
+  }
+  // "Al azar" is resolved here, so the song you hear is the one the video uses.
+  function musicChoice() {
+    const choice = getState().settings.musicChoice;
+    if (!choice.startsWith("style:")) return choice;
+    const style = choice.slice(6);
+    if (!picked.startsWith(`song:${style}/`)) picked = pick(style) || "";
+    return picked || choice;
+  }
+  function showMusicPreview() {
+    const choice = musicChoice(),
+      player = $("#video-music-player");
+    const name = media.music
+      ? media.music.name.replace(/\.[^.]+$/, "")
+      : choice.startsWith("song:")
+        ? songName(choice)
+        : (media.defaultMusic?.name || "Real Estate.mp3").replace(/\.[^.]+$/, "");
+    $("#video-music-now").textContent = `Sonará: ${name}`;
+    const style = getState().settings.musicChoice.startsWith("style:");
+    $("#video-music-shuffle").hidden =
+      !!media.music ||
+      !style ||
+      (library.styles.find(
+        (item) => item.name === getState().settings.musicChoice.slice(6),
+      )?.songs.length || 0) < 2;
+    const source = `/api/video/music-preview?${query(`&choice=${encodeURIComponent(choice)}`)}`;
+    if (player.dataset.source !== source) {
+      player.pause();
+      player.dataset.source = source;
+      player.src = source;
+    }
+  }
   function fillMusic() {
     const select = $("#video-music-choice"),
       current = getState().settings.musicChoice;
@@ -427,7 +461,7 @@ export function initVideo({
           photoSeconds: settings.photoSeconds,
           musicVolume: settings.musicVolume,
           transitions: settings.videoTransitions,
-          musicChoice: settings.musicChoice,
+          musicChoice: musicChoice(),
           background,
           slides,
           cover: capture(
@@ -575,27 +609,12 @@ export function initVideo({
       button.disabled = false;
     }
   });
-  $("#video-music-listen").addEventListener("click", () => {
-    if (preview && !preview.paused) {
-      preview.pause();
-      $("#video-music-listen").textContent = "Escuchar";
-      return;
-    }
-    preview?.pause();
-    preview = new Audio(
-      `/api/video/library-song?choice=${encodeURIComponent(getState().settings.musicChoice)}`,
-    );
-    preview.addEventListener("ended", () => {
-      $("#video-music-listen").textContent = "Escuchar";
-    });
-    preview
-      .play()
-      .then(() => ($("#video-music-listen").textContent = "Detener"))
-      .catch(() => notice("No se pudo reproducir la canción.", true));
-  });
-  $("#video-music-choice").addEventListener("input", () => {
-    preview?.pause();
-    $("#video-music-listen").textContent = "Escuchar";
+  $("#video-music-shuffle").addEventListener("click", () => {
+    const choice = getState().settings.musicChoice;
+    if (choice.startsWith("style:")) picked = pick(choice.slice(6));
+    const playing = !$("#video-music-player").paused;
+    showMusicPreview();
+    if (playing) $("#video-music-player").play().catch(() => {});
   });
   $("#video-save-folder").addEventListener("click", saveToFolder);
   $("#generate-video").addEventListener("click", generate);

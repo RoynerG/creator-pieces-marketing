@@ -515,24 +515,22 @@ test("songs come from the music folder by style without leaving it", async (t) =
     { name: "Romántico", songs: ["Luna.m4a"] },
     { name: "Tropical", songs: ["Sol.m4a"] },
   ]);
-  const preview = await fetch(
-    `${url}/api/video/library-song?choice=${encodeURIComponent("song:Romántico/Luna.m4a")}`,
-  );
+  const listen = (choice, headers) =>
+    fetch(
+      `${url}/api/video/music-preview?code=7016&choice=${encodeURIComponent(choice)}`,
+      { headers },
+    );
+  const preview = await listen("song:Romántico/Luna.m4a");
   assert.equal(preview.headers.get("content-type"), "audio/mp4");
+  const builtIn = await listen("", { Range: "bytes=0-99" });
+  assert.equal(builtIn.status, 206);
+  assert.equal(builtIn.headers.get("content-type"), "audio/mpeg");
   for (const choice of [
     "song:Tropical/../../fuera.m4a",
     `song:${outside}`,
     "song:Tropical/notas.txt",
   ])
-    assert.equal(
-      (
-        await fetch(
-          `${url}/api/video/library-song?choice=${encodeURIComponent(choice)}`,
-        )
-      ).status,
-      400,
-      choice,
-    );
+    assert.equal((await listen(choice)).status, 400, choice);
   const cover = await dataUrl(dir, "cover.png", "white");
   const base = {
     code: "7016",

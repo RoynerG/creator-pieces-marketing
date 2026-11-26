@@ -135,6 +135,12 @@
   height: 28px;
   min-height: 28px;
 }
+#video-music-player {
+  display: block;
+  width: 100%;
+  height: 36px;
+  margin-top: 6px;
+}
 .video-result-actions {
   display: flex;
   flex-wrap: wrap;
